@@ -25,8 +25,8 @@ function getSafeAuthRedirectFallback(fallback: unknown) {
   return safeFallback;
 }
 
-// The /login and /register paths are thin shims that just open the auth sheet, so a
-// post-auth redirect must never resolve to one (it would re-open the sheet).
+// /login and /register are the auth screens themselves, so a post-auth redirect
+// must never resolve to one (it would just bounce the user back to sign in).
 function isAuthPathname(pathname: string): boolean {
   return pathname === '/login' || pathname === '/register';
 }

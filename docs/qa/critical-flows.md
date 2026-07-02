@@ -15,26 +15,28 @@ For each changed area:
 
 ## Authentication
 
-Login and signup are views inside one global bottom-sheet (`useAuthDrawer`), opened
-from any signed-out entry point — there are no standalone `/login` or `/register`
-screens. On success the sheet closes via a full-page navigation to the intended
-destination so every signed-out branch re-renders.
+Login and signup are the full-screen auth screen at `/login` and `/register` (one
+`AuthScreen`, toggled between the two modes in place). Signed-out entry points
+navigate there via `buildAuthPath`, carrying a `?redirect=` for where to return. On
+success a full-page navigation to that destination lets every signed-out branch
+re-render.
 
 ### Register
 
 - New user can create an account (optional nickname).
 - Duplicate email is rejected clearly.
 - Required fields are validated (password ≥ 6 characters).
-- After register, the auth sheet closes and the user lands in an authenticated state.
+- After register, a full-page navigation lands the user in an authenticated state.
 
 ### Login
 
 - Existing user can log in.
 - Invalid credentials show a friendly error.
-- Toggling between the login and signup views keeps the sheet open (no navigation).
+- Toggling between the login and signup modes stays on the screen (local state, no navigation).
 - After auth, the user lands on their intended destination (the screen they were on,
   or the captured intent target) when safe.
 - Unsafe redirect/intent targets are ignored.
+- The "Navegar sem login" link opens home (`/`) without authenticating.
 
 ### Logout
 
@@ -50,11 +52,10 @@ destination so every signed-out branch re-renders.
 - `/groups/:groupId/matches/new` requires group membership.
 - `/groups/:groupId/matches/:matchId/edit` requires group membership.
 - `/groups/:groupId/invite` requires admin role.
-- `/login` and `/register` are deep-link shims: they open the auth sheet over home
-  and replace the URL with `/` (no standalone guest screens); an already-signed-in
-  visitor just lands on home.
-- A tokenless visitor to a protected route is sent home with the auth sheet open,
-  and lands on the originally-intended route after authenticating.
+- `/login` and `/register` are the auth screen (also the deep-link target for invite
+  emails); an already-signed-in visitor is bounced to their redirect target or home.
+- A tokenless visitor to a protected route is sent to `/login?redirect=…`, and lands
+  on the originally-intended route after authenticating.
 - Protected content does not flash before access checks finish.
 
 ## Groups

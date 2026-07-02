@@ -78,9 +78,9 @@ export function isAccessTokenExpired(token: string): boolean {
   return exp * 1000 <= Date.now();
 }
 
-// A dead session is handled in exactly one place (the auth drawer), but detected
-// deep in the API client. This registry bridges the two without coupling lib code
-// to React/UI.
+// A dead session is handled in exactly one place (SessionExpiryRedirect, which
+// navigates to /login), but detected deep in the API client. This registry bridges
+// the two without coupling lib code to React/UI.
 type SessionExpiredHandler = () => void;
 let sessionExpiredHandler: SessionExpiredHandler | null = null;
 let sessionExpiredHandled = false;
@@ -90,7 +90,7 @@ export function setSessionExpiredHandler(handler: SessionExpiredHandler | null) 
 }
 
 // Fires the handler once per dead session: concurrent failed requests all call this,
-// but only the first opens the login drawer. Re-armed when a new token is stored.
+// but only the first redirects to login. Re-armed when a new token is stored.
 export function triggerSessionExpired() {
   if (sessionExpiredHandled) {
     return;

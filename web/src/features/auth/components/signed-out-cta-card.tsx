@@ -2,9 +2,10 @@
 
 import type { LucideIcon } from 'lucide-react';
 import { LogIn } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useAuthDrawer, type AuthDrawerView } from '@/features/auth/auth-drawer-provider';
+import { buildAuthPath, type AuthMode } from '@/features/auth/auth-navigation';
 
 type AuthPrimaryAction = 'login' | 'register';
 
@@ -24,14 +25,10 @@ export function SignedOutCtaCard({
   primaryAction,
   icon: Icon = LogIn,
 }: SignedOutCtaCardProps) {
-  const { open } = useAuthDrawer();
-
-  const primaryView: AuthDrawerView = primaryAction === 'login' ? 'login' : 'signup';
-  const secondaryView: AuthDrawerView = primaryAction === 'login' ? 'signup' : 'login';
+  const primaryMode: AuthMode = primaryAction === 'login' ? 'login' : 'signup';
+  const secondaryMode: AuthMode = primaryAction === 'login' ? 'signup' : 'login';
   const primaryLabel = primaryAction === 'login' ? 'Entrar' : 'Criar conta';
   const secondaryLabel = primaryAction === 'login' ? 'Criar conta' : 'Entrar';
-
-  const openView = (view: AuthDrawerView) => open({ view, intent: { redirectPath } });
 
   return (
     <Card className="bg-gradient-to-br from-card via-card to-primary/10">
@@ -46,16 +43,16 @@ export function SignedOutCtaCard({
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <Button className="rounded-full" onClick={() => openView(primaryView)}>
-            {primaryLabel}
+          <Button asChild className="rounded-full">
+            <Link href={buildAuthPath({ mode: primaryMode, redirect: redirectPath })}>
+              {primaryLabel}
+            </Link>
           </Button>
 
-          <Button
-            variant="outline"
-            className="rounded-full"
-            onClick={() => openView(secondaryView)}
-          >
-            {secondaryLabel}
+          <Button asChild variant="outline" className="rounded-full">
+            <Link href={buildAuthPath({ mode: secondaryMode, redirect: redirectPath })}>
+              {secondaryLabel}
+            </Link>
           </Button>
         </div>
       </CardContent>

@@ -1,12 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { Activity, TrendingUp, Trophy, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Body, Heading, Meta } from '@/components/ui/text';
-import { useAuthDrawer } from '@/features/auth/auth-drawer-provider';
+import { buildAuthPath } from '@/features/auth/auth-navigation';
 
-// What the user gets by signing in — the reason to tap "Entrar". Tapping it opens
-// the auth sheet and, on success, lands back on the profile.
+// What the user gets by signing in — the reason to tap "Entrar". It links to
+// /login and, on success, lands back on the profile.
 const VALUE_PROPS = [
   {
     icon: Activity,
@@ -26,8 +27,6 @@ const VALUE_PROPS = [
 ];
 
 export function ProfileSignedOutState() {
-  const { open } = useAuthDrawer();
-
   return (
     <div className="flex min-h-[68vh] flex-col items-center justify-center px-2 text-center">
       <div className="flex size-[5.5rem] items-center justify-center rounded-full bg-surface shadow-hairline">
@@ -50,12 +49,8 @@ export function ProfileSignedOutState() {
         ))}
       </div>
 
-      <Button
-        size="lg"
-        className="mt-loose w-full max-w-[19rem]"
-        onClick={() => open({ view: 'login', intent: { redirectPath: '/profile' } })}
-      >
-        Entrar
+      <Button asChild size="lg" className="mt-loose w-full max-w-[19rem]">
+        <Link href={buildAuthPath({ mode: 'login', redirect: '/profile' })}>Entrar</Link>
       </Button>
     </div>
   );

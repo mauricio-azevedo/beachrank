@@ -73,9 +73,9 @@ only (except route files, which need `default`).
   joined). Base URL from `NEXT_PUBLIC_API_URL`.
 - **Expired-session handling**: before sending (and on a `401` afterwards), if the
   supplied token is past its `exp` (`isAccessTokenExpired`, `lib/auth.ts`),
-  `apiRequest` calls `triggerSessionExpired()` — which clears the token and opens
-  the login drawer with a "sessão expirou" notice (handler registered by
-  `AuthDrawerProvider`). The `exp` check is the discriminator: a `401` with a
+  `apiRequest` calls `triggerSessionExpired()` — which clears the token and sends the
+  user to `/login` with a "sessão expirou" notice (handler registered by
+  `SessionExpiryRedirect`). The `exp` check is the discriminator: a `401` with a
   still-valid token is a business error (e.g. wrong current password) and must
   **not** log the user out. There is no refresh token — the user re-authenticates.
 - `*.api.ts` files contain only functions named `get*/create*/update*/delete*`,

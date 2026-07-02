@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { AppHeaderShell } from '@/components/app-header-shell';
 import { Button } from '@/components/ui/button';
 import { Meta, Title } from '@/components/ui/text';
 import { getMe } from '@/features/auth/api/auth.api';
-import { useAuthDrawer } from '@/features/auth/auth-drawer-provider';
+import { buildAuthPath } from '@/features/auth/auth-navigation';
 import { getAccessToken } from '@/lib/auth';
 import { NotificationBell } from '@/features/notifications/components/notification-bell';
 
@@ -17,7 +18,6 @@ function greeting() {
 }
 
 export function HomeHeader() {
-  const { open } = useAuthDrawer();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [firstName, setFirstName] = useState<string>();
   const [loading, setLoading] = useState(true);
@@ -64,8 +64,8 @@ export function HomeHeader() {
         {isLoggedIn ? (
           <NotificationBell />
         ) : (
-          <Button size="lg" onClick={() => open({ view: 'login' })}>
-            Entrar
+          <Button asChild size="lg">
+            <Link href={buildAuthPath({ mode: 'login' })}>Entrar</Link>
           </Button>
         )}
       </div>

@@ -1,13 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { TypographyMuted, TypographySmall } from '@/components/ui/typography';
-import { useAuthDrawer } from '@/features/auth/auth-drawer-provider';
+import { buildAuthPath } from '@/features/auth/auth-navigation';
 
 export function SignedOutFeedState() {
-  const { open } = useAuthDrawer();
-
   return (
     <Card>
       <CardContent className="space-y-4 p-4">
@@ -17,15 +16,12 @@ export function SignedOutFeedState() {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <Button onClick={() => open({ view: 'login', intent: { redirectPath: '/' } })}>
-            Entrar
+          <Button asChild>
+            <Link href={buildAuthPath({ mode: 'login' })}>Entrar</Link>
           </Button>
 
-          <Button
-            variant="outline"
-            onClick={() => open({ view: 'signup', intent: { redirectPath: '/' } })}
-          >
-            Criar conta
+          <Button asChild variant="outline">
+            <Link href={buildAuthPath({ mode: 'signup' })}>Criar conta</Link>
           </Button>
         </div>
       </CardContent>

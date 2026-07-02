@@ -4,7 +4,7 @@ import { Suspense, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AppTopBar, type AppTopBarBack } from '@/components/app-top-bar';
 import { BottomNav } from '@/components/bottom-nav';
-import { useAuthDrawer } from '@/features/auth/auth-drawer-provider';
+import { buildAuthPath } from '@/features/auth/auth-navigation';
 import { getMyGroups } from '@/features/groups/api/groups.api';
 import { getAccessToken } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -33,8 +33,6 @@ export function AppShell({ children, chrome }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { open: openAuthDrawer } = useAuthDrawer();
-
   const currentPathname = pathname ?? '/';
   const routePolicy = useMemo(() => getRoutePolicy(currentPathname), [currentPathname]);
   const routeAccess = routePolicy.access;
@@ -56,12 +54,10 @@ export function AppShell({ children, chrome }: AppShellProps) {
       const token = getAccessToken();
 
       if (!token) {
-        // No /login route anymore: send them to public home and open the auth
-        // sheet, remembering where they meant to go so success lands them there.
+        // No token on a gated route: send them to the login screen, remembering
+        // where they meant to go so success lands them back there.
         setAccessState('redirecting');
-        const intendedPath = getCurrentPathWithSearch();
-        router.replace('/');
-        openAuthDrawer({ view: 'login', intent: { redirectPath: intendedPath } });
+        router.replace(buildAuthPath({ redirect: getCurrentPathWithSearch() }));
         return;
       }
 
@@ -107,7 +103,7 @@ export function AppShell({ children, chrome }: AppShellProps) {
     return () => {
       isCurrent = false;
     };
-  }, [routeAccess, router, openAuthDrawer]);
+  }, [routeAccess, router]);
 
   const shouldHoldContent = routeAccess.requiresCheck && accessState !== 'allowed';
   const customHeader = chrome?.header;

@@ -85,7 +85,7 @@ export function GroupMembersDrawer({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent aria-describedby={undefined} size="fit">
         <DrawerHeader className="items-center pb-3 pt-1 text-center">
-          <DrawerTitle>Membros</DrawerTitle>
+          <DrawerTitle>Jogadores</DrawerTitle>
           <Meta className="text-muted-foreground">{members.length} no grupo</Meta>
         </DrawerHeader>
 

@@ -19,7 +19,7 @@ export function RankingList({ ranking, currentMembershipId }: Props) {
         <CardContent className="space-y-snug p-4">
           <Label className="block text-foreground">Nenhum jogador no ranking ainda</Label>
           <Body className="text-muted-foreground">
-            Registre partidas para transformar os membros em uma disputa real.
+            Registre partidas para transformar os jogadores em uma disputa real.
           </Body>
         </CardContent>
       </Card>

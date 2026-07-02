@@ -72,7 +72,7 @@ export default function StylePage() {
             </span>
           </Row>
           <Row name="meta">
-            <span className="text-meta text-muted-foreground">19 membros</span>
+            <span className="text-meta text-muted-foreground">19 jogadores</span>
           </Row>
           <Row name="overline">
             <Overline>Sua posição</Overline>

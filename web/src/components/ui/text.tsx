@@ -121,7 +121,7 @@ function Overline({
 }
 
 /**
- * Inline dot separator between meta items — the round bolinha in "12 membros · 30
+ * Inline dot separator between meta items — the round bolinha in "12 jogadores · 30
  * partidas". Use it everywhere a `·` once joined counts or labels so every meta
  * line reads the same. Carries its own `mx-tight` to self-space inside running
  * text; inside a gap-spaced flex row pass `className="mx-0"`.

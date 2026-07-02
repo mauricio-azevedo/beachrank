@@ -77,7 +77,7 @@ export function PickerView({
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar membro do grupo"
+            placeholder="Buscar jogador do grupo"
             className="min-w-0 flex-1 bg-transparent text-field font-semibold text-foreground outline-none placeholder:text-faint-foreground"
           />
         </div>

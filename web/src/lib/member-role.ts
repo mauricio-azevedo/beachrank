@@ -15,5 +15,5 @@ export function memberRoleTag(member: {
   if (member.role === 'ADMIN') {
     return { label: 'Admin', className: 'bg-brand/15 text-brand' };
   }
-  return { label: 'Membro', className: 'bg-background text-muted-foreground' };
+  return { label: 'Jogador', className: 'bg-background text-muted-foreground' };
 }

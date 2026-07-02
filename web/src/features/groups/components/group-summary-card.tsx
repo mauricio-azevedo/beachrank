@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { ChevronRight, Search } from 'lucide-react';
 import type { Group, GroupMember, GroupMemberRole, Match, MyGroup } from '@/types/api';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Body, Dot, Label, Meta, Stat, Title } from '@/components/ui/text';
@@ -184,7 +184,8 @@ function GroupIdentityHeader({
           )}
         >
           <span className="text-foreground">{memberCount}</span>
-          {memberCount === 1 ? 'membro' : 'membros'}
+          {memberCount === 1 ? 'jogador' : 'jogadores'}
+          <ChevronRight className="size-3.5 text-muted-foreground" />
         </button>
         <Dot className="mx-0" />
         <span className="flex items-center gap-tight">

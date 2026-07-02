@@ -72,7 +72,7 @@ export function HomeGroupCard({ card }: { card: GroupHomeCard }) {
           <div className="min-w-0 flex-1">
             <Label className="block truncate">{card.group.name}</Label>
             <Meta className="mt-tight block text-muted-foreground">
-              <span className="text-foreground">{card.group.membersCount}</span> membros
+              <span className="text-foreground">{card.group.membersCount}</span> jogadores
               <Dot />
               <span className="text-foreground">{card.group.matchesCount}</span> partidas
             </Meta>

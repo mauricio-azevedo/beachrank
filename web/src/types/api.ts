@@ -73,6 +73,13 @@ export type MyGroup = {
   group: Group;
 };
 
+// A lightweight roster row on the open invite: just enough to self-recognize.
+export type InviteGuest = {
+  groupMemberId: string;
+  displayName: string;
+  matchesCount: number;
+};
+
 export type GroupInvite = {
   id: string;
   token: string;
@@ -87,6 +94,13 @@ export type GroupInvite = {
   path: string;
   group?: Group;
   createdBy?: User;
+  // Present on GET /invites/:token. OPEN → the `guests` roster; CLOSED → the `target`
+  // recognition. A closed invite whose target was already taken over (or left) degrades to
+  // OPEN + `targetUnavailable`, so the opener still has a way in.
+  kind?: 'OPEN' | 'CLOSED';
+  guests?: InviteGuest[];
+  target?: ClaimStubSummary;
+  targetUnavailable?: boolean;
 };
 
 // One of the stub's recent matches, from the stub's own perspective.

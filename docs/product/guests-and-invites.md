@@ -92,8 +92,9 @@ also **not a profile link** — there's no account behind it yet.
 The group has **one shareable link / QR**. It is **viewable without logging in**, so the
 gift can hook the person before any friction:
 
-- The list shows the unclaimed guests with **name + avatar only** — no history up front, so
-  the roster isn't an open record of who played with whom.
+- The list shows the unclaimed guests with **name, avatar, and a match count** ("N jogos") —
+  enough to self-recognize, but not the match graph (no partners/opponents), so the roster
+  isn't an open record of who played with whom.
 - **Picking yourself** opens the **recognition screen** (below) — that's where the history
   appears.
 - A clear **"não estou aqui — entrar como novo"** option joins as a new member.
@@ -166,17 +167,17 @@ brief **"recalculando"** state rather than showing pre-merge numbers as final.
 
 ## Assumptions (premissas)
 
-| #   | Assumption                                                                                               | Source           |
-| --- | -------------------------------------------------------------------------------------------------------- | ---------------- |
-| P1  | Matches reference `GroupMember`, never `User` — the invariant that makes take-over cheap. Not revisited. | crown-jewel      |
-| P2  | `stub` is renamed `guest` (convidado) across product **and** code.                                       | product decision |
-| P3  | Two guest-aware invites — **open** (the group's mass link) + **closed** (addressed to one guest).        | product decision |
-| P4  | There is **no generic join link**; the open invite's "just join" branch subsumes it safely.              | product decision |
-| P5  | Open list shows name + avatar only; history shows on the recognition screen. Browsing needs no login.    | product decision |
-| P6  | Login/signup happens only at the commit (take over or join), not to browse.                              | product decision |
-| P7  | Both invites are reusable until taken over and not revocable (V1); an unavailable target falls back.     | product decision |
-| P8  | Take-over is instant + reversible by an admin; the admin notification is actionable (one-tap revert).    | product decision |
-| P9  | The shared-match merge block is physics of the data (`@@unique([matchId, groupMemberId])`) and survives. | invariant        |
+| #   | Assumption                                                                                                          | Source           |
+| --- | ------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| P1  | Matches reference `GroupMember`, never `User` — the invariant that makes take-over cheap. Not revisited.            | crown-jewel      |
+| P2  | `stub` is renamed `guest` (convidado) across product **and** code.                                                  | product decision |
+| P3  | Two guest-aware invites — **open** (the group's mass link) + **closed** (addressed to one guest).                   | product decision |
+| P4  | There is **no generic join link**; the open invite's "just join" branch subsumes it safely.                         | product decision |
+| P5  | Open list shows name + avatar + match count; full history shows on the recognition screen. Browsing needs no login. | product decision |
+| P6  | Login/signup happens only at the commit (take over or join), not to browse.                                         | product decision |
+| P7  | Both invites are reusable until taken over and not revocable (V1); an unavailable target falls back.                | product decision |
+| P8  | Take-over is instant + reversible by an admin; the admin notification is actionable (one-tap revert).               | product decision |
+| P9  | The shared-match merge block is physics of the data (`@@unique([matchId, groupMemberId])`) and survives.            | invariant        |
 
 ## Cases &amp; edges
 

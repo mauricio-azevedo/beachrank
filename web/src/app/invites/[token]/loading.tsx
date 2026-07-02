@@ -1,28 +1,23 @@
 import { AppShell } from '@/components/app-shell';
-import { Card, CardContent } from '@/components/ui/card';
 
+// Welcome-shaped skeleton for the chrome-less invite landing.
 export default function InviteLoading() {
   return (
-    <AppShell chrome={{ title: 'Convite para grupo', back: { fallbackHref: '/' } }}>
-      <div role="status" aria-live="polite" aria-busy="true" className="space-y-6">
+    <AppShell chrome={{ topBar: false, bottomNav: false }}>
+      <div
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        className="flex min-h-[78dvh] flex-col"
+      >
         <span className="sr-only">Carregando convite</span>
 
-        <div className="space-y-2">
-          <div className="h-8 w-52 animate-pulse rounded-full bg-muted" />
-          <div className="h-4 w-full animate-pulse rounded-full bg-muted/80" />
-          <div className="h-4 w-3/4 animate-pulse rounded-full bg-muted/70" />
+        <div className="flex flex-1 flex-col justify-center">
+          <div className="h-10 w-2/3 animate-pulse rounded-lg bg-muted" />
+          <div className="mt-7 h-[4.5rem] animate-pulse rounded-2xl bg-muted/80" />
         </div>
 
-        <Card>
-          <CardContent className="space-y-4 p-4">
-            <div className="h-5 w-32 animate-pulse rounded-full bg-muted" />
-            <div className="h-12 animate-pulse rounded-2xl bg-muted/80" />
-            <div className="grid grid-cols-2 gap-2">
-              <div className="h-11 animate-pulse rounded-2xl bg-muted" />
-              <div className="h-11 animate-pulse rounded-2xl bg-muted/70" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="h-12 w-full animate-pulse rounded-pill bg-muted" />
       </div>
     </AppShell>
   );

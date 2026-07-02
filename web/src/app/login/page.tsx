@@ -1,8 +1,9 @@
 import { AuthScreen } from '@/features/auth/components/auth-screen';
+import { readInviteContext } from '@/features/auth/auth-navigation';
 
-// Full-screen login. `?redirect=` (where to return after auth) and `?notice=`
-// (e.g. an expired session) are read here and handed to the client screen; the
-// footer toggle switches to signup in place.
+// Full-screen login. `?redirect=` (where to return after auth), `?notice=` (e.g. an
+// expired session), and the invite banner (`?ctx=`/`?nick=`) are read here and handed to
+// the client screen; the footer toggle switches to signup in place.
 export default async function LoginPage({
   searchParams,
 }: {
@@ -12,5 +13,12 @@ export default async function LoginPage({
   const redirect = typeof params.redirect === 'string' ? params.redirect : undefined;
   const notice = params.notice === 'expired' ? ('expired' as const) : undefined;
 
-  return <AuthScreen initialMode="login" redirect={redirect} notice={notice} />;
+  return (
+    <AuthScreen
+      initialMode="login"
+      redirect={redirect}
+      notice={notice}
+      invite={readInviteContext(params)}
+    />
+  );
 }

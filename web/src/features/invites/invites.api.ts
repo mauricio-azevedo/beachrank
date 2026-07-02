@@ -1,1 +1,1 @@
-export { acceptInvite, createGroupInvite, getInvite } from './api/invites.api';
+export { acceptInvite, claimInviteGuest, createGroupInvite, getInvite } from './api/invites.api';

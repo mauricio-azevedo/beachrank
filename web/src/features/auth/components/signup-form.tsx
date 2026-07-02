@@ -17,15 +17,19 @@ import { setAccessToken } from '@/lib/auth';
 // optional. Chrome-agnostic (the auth screen wraps it); on success it stores the
 // token and hands off to `onAuthenticated` (a full-page navigation).
 export function SignupForm({
+  initialNickname,
   onAuthenticated,
   onSwitchToLogin,
 }: {
+  // Pre-fills the apelido — e.g. the guest name when signing up from an invite, so the
+  // person keeps appearing as that name in the group.
+  initialNickname?: string;
   onAuthenticated: () => void;
   onSwitchToLogin: () => void;
 }) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [nickname, setNickname] = useState('');
+  const [nickname, setNickname] = useState(initialNickname ?? '');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

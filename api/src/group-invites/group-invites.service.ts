@@ -210,9 +210,29 @@ export class GroupInvitesService {
       select: { id: true, displayName: true },
     });
 
+    if (guests.length === 0) {
+      return [];
+    }
+
+    // One grouped count of each guest's non-deleted matches, so a roster row can show
+    // "N jogos" without a per-guest call. Guests with no matches are absent → 0.
+    const counts = await this.prisma.matchPlayer.groupBy({
+      by: ['groupMemberId'],
+      where: {
+        groupId,
+        groupMemberId: { in: guests.map((guest) => guest.id) },
+        match: { deletedAt: null },
+      },
+      _count: { _all: true },
+    });
+    const matchCountById = new Map(
+      counts.map((row) => [row.groupMemberId, row._count._all]),
+    );
+
     return guests.map((guest) => ({
       groupMemberId: guest.id,
       displayName: guest.displayName ?? '',
+      matchesCount: matchCountById.get(guest.id) ?? 0,
     }));
   }
 

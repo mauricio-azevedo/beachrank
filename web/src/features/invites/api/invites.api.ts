@@ -1,5 +1,5 @@
 import { apiRequest } from '@/lib/api-client';
-import type { Group, GroupInvite, User } from '@/types/api';
+import type { AcceptClaimResult, Group, GroupInvite, User } from '@/types/api';
 
 export function createGroupInvite(token: string, groupId: string): Promise<GroupInvite> {
   return apiRequest<GroupInvite>(`/groups/${groupId}/invites`, {
@@ -30,6 +30,19 @@ export function acceptInvite(
   user: User;
 }> {
   return apiRequest(`/invites/${inviteToken}/accept`, {
+    method: 'POST',
+    token: authToken,
+  });
+}
+
+// Take over a guest via the invite (open-list pick or closed target). CLAIMED → the new
+// membership; BLOCKED → a shared-match conflict. Requires an account (called post-auth).
+export function claimInviteGuest(
+  authToken: string,
+  inviteToken: string,
+  guestId: string,
+): Promise<AcceptClaimResult> {
+  return apiRequest<AcceptClaimResult>(`/invites/${inviteToken}/claim/${guestId}`, {
     method: 'POST',
     token: authToken,
   });

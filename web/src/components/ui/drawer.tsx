@@ -137,11 +137,15 @@ function DrawerActionHeader({
   title,
   subtitle,
   right,
+  // `sm` shrinks the title (16px) so a longer heading — e.g. "Adicionar convidados"
+  // — fits the centered slot without truncating between the side actions.
+  titleSize = 'default',
 }: {
   left?: DrawerHeaderBack | DrawerHeaderCancel;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   right?: DrawerHeaderSave;
+  titleSize?: 'default' | 'sm';
 }) {
   return (
     <div className="flex h-[52px] shrink-0 items-center justify-between gap-2 px-3">
@@ -150,7 +154,9 @@ function DrawerActionHeader({
       </div>
 
       <div className="min-w-0 flex-1 text-center">
-        <DrawerTitle className="truncate">{title}</DrawerTitle>
+        <DrawerTitle size={titleSize} className="truncate">
+          {title}
+        </DrawerTitle>
         {subtitle !== undefined && (
           <Meta className="truncate text-faint-foreground">{subtitle}</Meta>
         )}
@@ -183,7 +189,7 @@ function DrawerHeaderLeft({ action }: { action: DrawerHeaderBack | DrawerHeaderC
         onClick={action.onClick}
         disabled={action.disabled}
         className={cn(
-          'text-label text-brand transition-opacity active:opacity-60 disabled:opacity-40',
+          'text-label text-muted-foreground transition-opacity active:opacity-60 disabled:opacity-40',
           TOUCH_TARGET_48,
         )}
       >
@@ -232,11 +238,19 @@ function DrawerBackHeader({
   );
 }
 
-function DrawerTitle({ className, ...props }: React.ComponentProps<typeof DrawerPrimitive.Title>) {
+function DrawerTitle({
+  className,
+  size = 'default',
+  ...props
+}: React.ComponentProps<typeof DrawerPrimitive.Title> & { size?: 'default' | 'sm' }) {
   return (
     <DrawerPrimitive.Title
       data-slot="drawer-title"
-      className={cn('font-display text-heading', className)}
+      className={cn(
+        'font-display',
+        size === 'sm' ? 'text-base font-extrabold tracking-[-0.01em]' : 'text-heading',
+        className,
+      )}
       {...props}
     />
   );

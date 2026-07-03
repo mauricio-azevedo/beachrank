@@ -133,7 +133,7 @@ export function formatGroupsCount(count: number) {
 }
 
 export function formatMembersCount(count: number) {
-  return `${count} ${count === 1 ? 'membro' : 'membros'}`;
+  return `${count} ${count === 1 ? 'jogador' : 'jogadores'}`;
 }
 
 function getActivityHeadline(activity: GroupHomeActivity) {

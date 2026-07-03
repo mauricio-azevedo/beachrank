@@ -114,7 +114,7 @@ function MyGroupCard({ membership, ratingLabel }: { membership: MyGroup; ratingL
           </div>
 
           <div className="grid grid-cols-3 gap-snug">
-            <GroupMetric label="membros" value={memberCount} />
+            <GroupMetric label="jogadores" value={memberCount} />
             <GroupMetric label="partidas" value={matchCount} />
             <GroupMetric label={ratingLabel.toLowerCase()} value={Math.round(membership.rating)} />
           </div>

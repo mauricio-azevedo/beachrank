@@ -62,7 +62,7 @@ export function GroupOptionsMenu({ groupId }: { groupId: string }) {
         <DropdownMenuItem asChild>
           <Link href={`/groups/${groupId}/invite`}>
             <UserPlus />
-            Convidar membros
+            Convidar jogadores
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

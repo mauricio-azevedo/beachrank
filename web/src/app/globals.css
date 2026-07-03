@@ -102,6 +102,7 @@
     --color-card-foreground: var(--card-foreground);
     --color-popover: var(--popover);
     --color-popover-foreground: var(--popover-foreground);
+    --color-dialog: var(--dialog);
 
     /* — Brand & semantic accents — */
     --color-brand: var(--brand);
@@ -111,6 +112,7 @@
     --color-success-foreground: var(--success-foreground);
     --color-danger: var(--danger);
     --color-danger-foreground: var(--danger-foreground);
+    --color-danger-solid: var(--danger-solid);
 
     /* — Declared hues — match-story tags, avatar fills, rating-ring gradient — */
     --color-tag-warn: var(--tag-warn);
@@ -175,6 +177,8 @@
     --shadow-control: 0 2px 8px rgba(0, 0, 0, 0.18), inset 0 0 0 1px var(--border);
     --shadow-card: 0 6px 18px rgba(0, 0, 0, 0.22), inset 0 0 0 1px var(--border);
     --shadow-button: 0 4px 12px rgba(31, 73, 135, 0.4), inset 0 0 0 1px var(--border-accent);
+    /* Red glow for the solid destructive pill — sibling of --shadow-button. */
+    --shadow-danger: 0 6px 16px -4px color-mix(in oklch, var(--danger-solid) 40%, transparent);
     --shadow-float: 0 18px 40px -16px rgba(0, 0, 0, 0.6), inset 0 0 0 1px var(--border);
     /* Floating toast pill - a deeper drop plus a brighter (10%) rim so the frosted
        pill reads above any surface it pops over. */
@@ -238,6 +242,7 @@
     --card: var(--surface);
     --card-foreground: var(--foreground);
     --popover: oklch(1 0 0);
+    --dialog: oklch(1 0 0);
     --popover-foreground: var(--foreground);
 
     /* Brand */
@@ -247,6 +252,7 @@
     --success: oklch(0.62 0.17 150); /* #1ea64a */
     --success-foreground: oklch(0.99 0 0);
     --danger: oklch(0.62 0.22 22); /* #e5484d */
+    --danger-solid: oklch(0.62 0.22 22);
     --danger-foreground: oklch(0.99 0 0);
 
     /* shadcn roles */
@@ -303,6 +309,7 @@
     --card: var(--surface);
     --card-foreground: var(--foreground);
     --popover: oklch(0.21 0.01 274 / 60%);
+    --dialog: oklch(0.286 0.015 274); /* design dialog surface (#282a32) */
     --popover-foreground: var(--foreground);
 
     /* Brand */
@@ -312,6 +319,7 @@
     --success: oklch(0.74 0.18 149); /* #34c759 */
     --success-foreground: oklch(1 0 0);
     --danger: oklch(0.7 0.16 22); /* #ff6b63 */
+    --danger-solid: oklch(0.664 0.184 27); /* design #ef5b52 - solid destructive fill */
     --danger-foreground: oklch(1 0 0);
 
     /* shadcn roles */

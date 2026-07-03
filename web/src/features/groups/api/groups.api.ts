@@ -60,3 +60,17 @@ export function getGroupMembers(groupId: string): Promise<GroupMember[]> {
     cache: 'no-store',
   });
 }
+
+// Adds a guest (jogador sem conta) to the group — a GroupMember with userId null.
+// Any active member may do it; the created member comes back for an optimistic refresh.
+export function createGuestMember(
+  token: string,
+  groupId: string,
+  name: string,
+): Promise<GroupMember> {
+  return apiRequest<GroupMember>(`/groups/${groupId}/members/guest`, {
+    method: 'POST',
+    token,
+    body: { name },
+  });
+}

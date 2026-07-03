@@ -6,7 +6,8 @@ export type MemberAvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 // The single player/member avatar used everywhere. Only `size` varies the look;
 // everything else (colour gradient, initials, dashed-stub treatment) is fixed.
-const SIZE_CLASS: Record<MemberAvatarSize, string> = {
+// Exported so the avatar stack's overflow chip ("+N") can size itself identically.
+export const MEMBER_AVATAR_SIZE_CLASS: Record<MemberAvatarSize, string> = {
   xs: 'size-[34px] text-[0.8125rem]',
   sm: 'size-10 text-[0.9375rem]',
   md: 'size-11 text-base',
@@ -50,7 +51,7 @@ export function MemberAvatar({
       style={gradient ? { backgroundImage: gradient } : undefined}
       className={cn(
         'flex shrink-0 items-center justify-center rounded-full font-display font-extrabold',
-        SIZE_CLASS[size],
+        MEMBER_AVATAR_SIZE_CLASS[size],
         isStub
           ? 'border border-dashed border-border-accent text-muted-foreground'
           : 'text-foreground shadow-[inset_0_0_0_1px_var(--border)]',

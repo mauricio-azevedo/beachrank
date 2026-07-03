@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { getAccessToken } from '@/lib/auth';
 import { resolveMemberName } from '@/lib/member-name';
 import { MemberAvatar } from '@/components/ui/member-avatar';
+import { MemberAvatarStack } from '@/components/ui/member-avatar-stack';
 import { TOUCH_TARGET_48 } from '@/lib/touch-target';
 import { createGuestMember } from '@/features/groups/api/groups.api';
 import { MemberProfileContent } from '@/features/members/member-profile-drawer';
@@ -206,7 +207,7 @@ export function GroupMembersDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent aria-describedby={undefined} size="fit">
+      <DrawerContent aria-describedby={undefined} size="full">
         <div className="flex shrink-0 items-center justify-between gap-2 px-4 pb-2 pt-1">
           <span className="w-10 shrink-0" aria-hidden />
           <div className="flex min-w-0 items-center gap-2">
@@ -240,6 +241,7 @@ export function GroupMembersDrawer({
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar jogador"
               aria-label="Buscar jogador"
+              className="[&::-webkit-search-cancel-button]:hidden"
             />
           </InputGroup>
         </div>
@@ -288,6 +290,7 @@ export function GroupMembersDrawer({
             <DrawerActionHeader
               left={{ kind: 'cancel', onClick: requestCancel }}
               title="Adicionar convidados"
+              titleSize="sm"
             />
 
             <div className="shrink-0 px-4 pb-3 pt-1">
@@ -385,23 +388,11 @@ export function GroupMembersDrawer({
 
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
         <AlertDialogContent>
-          <div className="flex items-center justify-center">
-            {queue.slice(0, 4).map((guestName, index) => (
-              <MemberAvatar
-                key={`${guestName}-${index}`}
-                userId={null}
-                name={guestName}
-                avatarColor={null}
-                size="md"
-                className={cn('ring-2 ring-background', index > 0 && '-ml-3')}
-              />
-            ))}
-            {queue.length > 4 && (
-              <span className="-ml-3 flex size-11 items-center justify-center rounded-full bg-surface text-meta font-extrabold tabular-nums text-muted-foreground shadow-hairline ring-2 ring-background">
-                +{queue.length - 4}
-              </span>
-            )}
-          </div>
+          <MemberAvatarStack
+            className="justify-center"
+            ringClassName="ring-dialog"
+            members={queue.map((guestName) => ({ userId: null, name: guestName }))}
+          />
 
           <AlertDialogHeader>
             <AlertDialogTitle>{discardTitle(queue)}</AlertDialogTitle>

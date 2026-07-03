@@ -50,7 +50,9 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          'group/alert-dialog-content fixed top-1/2 left-1/2 z-[65] grid w-full max-w-xs -translate-x-1/2 -translate-y-1/2 gap-5 rounded-card bg-popover p-6 text-card-foreground shadow-float backdrop-blur-xl duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+          // Solid, slightly-elevated dialog surface — the design's #282a32 (dark) via
+          // the `--dialog` token, not the translucent popover glass.
+          'group/alert-dialog-content fixed top-1/2 left-1/2 z-[65] grid w-full max-w-xs -translate-x-1/2 -translate-y-1/2 gap-5 rounded-card bg-dialog p-6 text-card-foreground shadow-float duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           className,
         )}
         {...props}
@@ -171,10 +173,7 @@ function AlertDialogCancel({
     <Button variant={variant} size={size} asChild>
       <AlertDialogPrimitive.Cancel
         data-slot="alert-dialog-cancel"
-        className={cn(
-          'text-muted-foreground hover:bg-transparent hover:text-muted-foreground',
-          className,
-        )}
+        className={cn('text-brand hover:bg-transparent hover:text-brand', className)}
         {...props}
       />
     </Button>

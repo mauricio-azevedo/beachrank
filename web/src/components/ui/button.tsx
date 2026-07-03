@@ -25,7 +25,7 @@ const buttonVariants = cva(
         destructive:
           'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
         danger:
-          'bg-danger text-danger-foreground shadow-danger hover:bg-danger/90 focus-visible:ring-danger/30',
+          'bg-danger-solid text-danger-foreground shadow-danger hover:bg-danger-solid/90 focus-visible:ring-danger-solid/30',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {

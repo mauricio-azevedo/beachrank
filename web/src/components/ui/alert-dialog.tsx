@@ -50,7 +50,7 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          'group/alert-dialog-content fixed top-1/2 left-1/2 z-[65] grid w-full -translate-x-1/2 -translate-y-1/2 gap-6 rounded-card bg-background p-6 text-card-foreground shadow-float duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+          'group/alert-dialog-content fixed top-1/2 left-1/2 z-[65] grid w-full max-w-xs -translate-x-1/2 -translate-y-1/2 gap-5 rounded-card bg-popover p-6 text-card-foreground shadow-float backdrop-blur-xl duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           className,
         )}
         {...props}
@@ -63,10 +63,7 @@ function AlertDialogHeader({ className, ...props }: React.ComponentProps<'div'>)
   return (
     <div
       data-slot="alert-dialog-header"
-      className={cn(
-        'grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-6 sm:group-data-[size=default]/alert-dialog-content:place-items-start sm:group-data-[size=default]/alert-dialog-content:text-left sm:group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]',
-        className,
-      )}
+      className={cn('flex flex-col items-center gap-2 text-center', className)}
       {...props}
     />
   );
@@ -76,10 +73,7 @@ function AlertDialogFooter({ className, ...props }: React.ComponentProps<'div'>)
   return (
     <div
       data-slot="alert-dialog-footer"
-      className={cn(
-        'flex flex-col-reverse gap-2 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end',
-        className,
-      )}
+      className={cn('flex flex-col-reverse gap-2', className)}
       {...props}
     />
   );
@@ -105,10 +99,7 @@ function AlertDialogTitle({
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn(
-        'font-display text-heading sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2',
-        className,
-      )}
+      className={cn('font-display text-heading', className)}
       {...props}
     />
   );
@@ -143,8 +134,12 @@ function AlertDialogAction({
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Action> &
   Pick<React.ComponentProps<typeof Button>, 'variant' | 'size' | 'loading'>) {
+  // The standard primary action is a solid pill; a destructive one is the solid red
+  // treatment (the tonal `destructive` variant is for non-primary danger surfaces).
+  const buttonVariant = variant === 'destructive' ? 'danger' : variant;
+
   return (
-    <Button variant={variant} size={size} asChild>
+    <Button variant={buttonVariant} size={size} asChild>
       <AlertDialogPrimitive.Action
         data-slot="alert-dialog-action"
         className={cn(loading !== undefined && 'relative', className)}
@@ -167,7 +162,7 @@ function AlertDialogAction({
 
 function AlertDialogCancel({
   className,
-  variant = 'outline',
+  variant = 'ghost',
   size = 'lg',
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel> &
@@ -176,7 +171,10 @@ function AlertDialogCancel({
     <Button variant={variant} size={size} asChild>
       <AlertDialogPrimitive.Cancel
         data-slot="alert-dialog-cancel"
-        className={cn(className)}
+        className={cn(
+          'text-muted-foreground hover:bg-transparent hover:text-muted-foreground',
+          className,
+        )}
         {...props}
       />
     </Button>

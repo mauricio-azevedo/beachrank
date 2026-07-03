@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GroupActions } from '@/features/groups/components/group-actions';
 import { GroupDetailTabs } from '@/features/groups/components/group-detail-tabs';
 import { GroupSummaryCard } from '@/features/groups/components/group-summary-card';
@@ -41,13 +41,20 @@ export function GroupDetail({ groupId, tab, autoOpenCompose = false }: Props) {
   const [data, setData] = useState<GroupDetailData | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [refreshKey, setRefreshKey] = useState(0);
+  const loadedGroupIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
 
     async function loadGroupDetail() {
-      setStatus('loading');
-      setData(null);
+      // Skeleton only on the first load or when switching groups. A background refresh
+      // (refreshKey bump — e.g. after adding a guest) keeps the current view mounted so
+      // an open drawer stays open while the roster updates underneath it.
+      const isBackgroundRefresh = loadedGroupIdRef.current === groupId;
+      if (!isBackgroundRefresh) {
+        setStatus('loading');
+        setData(null);
+      }
 
       try {
         const token = getAccessToken();
@@ -72,12 +79,17 @@ export function GroupDetail({ groupId, tab, autoOpenCompose = false }: Props) {
 
         setData({ group, ranking, members, matches, membership });
         setStatus('ready');
+        loadedGroupIdRef.current = groupId;
       } catch {
         if (!isCurrent) {
           return;
         }
 
-        setStatus('error');
+        // A background refresh that fails leaves the current view intact; only the
+        // initial load surfaces the error screen.
+        if (!isBackgroundRefresh) {
+          setStatus('error');
+        }
       }
     }
 
@@ -123,6 +135,7 @@ export function GroupDetail({ groupId, tab, autoOpenCompose = false }: Props) {
               members={data.members}
               matches={data.matches}
               membership={data.membership}
+              onMembersChanged={() => setRefreshKey((key) => key + 1)}
             />
 
             <GroupActions groupId={data.group.id} canManageMatches={canManageMatches} />

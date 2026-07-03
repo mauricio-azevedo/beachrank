@@ -16,6 +16,8 @@ export type GroupSummaryCardProps = {
   members: GroupMember[];
   matches: Match[];
   membership: MyGroup | null;
+  // Bumps the group-detail refresh key so the roster reloads after a guest is added.
+  onMembersChanged: () => void;
 };
 
 export function GroupSummaryCard({
@@ -24,6 +26,7 @@ export function GroupSummaryCard({
   members,
   matches,
   membership,
+  onMembersChanged,
 }: GroupSummaryCardProps) {
   const currentRankIndex = membership
     ? ranking.findIndex((member) => member.id === membership.id)
@@ -52,6 +55,7 @@ export function GroupSummaryCard({
         memberCount={memberCount}
         matchCount={matchCount}
         viewerRole={membership?.role ?? null}
+        onMembersChanged={onMembersChanged}
       />
 
       <GroupSearchField />
@@ -153,6 +157,7 @@ function GroupIdentityHeader({
   memberCount,
   matchCount,
   viewerRole,
+  onMembersChanged,
 }: {
   group: Group;
   members: GroupMember[];
@@ -160,6 +165,7 @@ function GroupIdentityHeader({
   memberCount: number;
   matchCount: number;
   viewerRole: GroupMemberRole | null;
+  onMembersChanged: () => void;
 }) {
   const [membersOpen, setMembersOpen] = useState(false);
 
@@ -204,6 +210,7 @@ function GroupIdentityHeader({
         viewerRole={viewerRole}
         members={members}
         ranking={ranking}
+        onMembersChanged={onMembersChanged}
       />
     </div>
   );

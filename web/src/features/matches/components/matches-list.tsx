@@ -233,6 +233,7 @@ export function MatchCard({
             <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
 
             <AlertDialogAction
+              variant="destructive"
               loading={isDeleting}
               onClick={(event) => {
                 event.preventDefault();

@@ -135,10 +135,16 @@ export function GroupDetail({ groupId, tab, autoOpenCompose = false }: Props) {
               members={data.members}
               matches={data.matches}
               membership={data.membership}
-              onMembersChanged={() => setRefreshKey((key) => key + 1)}
             />
 
-            <GroupActions groupId={data.group.id} canManageMatches={canManageMatches} />
+            <GroupActions
+              group={data.group}
+              members={data.members}
+              ranking={data.ranking}
+              viewerRole={data.membership?.role ?? null}
+              canManageMatches={canManageMatches}
+              onMembersChanged={() => setRefreshKey((key) => key + 1)}
+            />
           </div>
 
           <GroupDetailTabs

@@ -1,14 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronRight, Search } from 'lucide-react';
-import type { Group, GroupMember, GroupMemberRole, Match, MyGroup } from '@/types/api';
+import { Search } from 'lucide-react';
+import type { Group, GroupMember, Match, MyGroup } from '@/types/api';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Body, Dot, Label, Meta, Stat, Title } from '@/components/ui/text';
 import { StandingCard } from '@/features/groups/components/standing-card';
-import { GroupMembersDrawer } from '@/features/groups/components/group-members-drawer';
-import { cn } from '@/lib/utils';
-import { TOUCH_TARGET_48 } from '@/lib/touch-target';
 
 export type GroupSummaryCardProps = {
   group: Group;
@@ -16,8 +13,6 @@ export type GroupSummaryCardProps = {
   members: GroupMember[];
   matches: Match[];
   membership: MyGroup | null;
-  // Bumps the group-detail refresh key so the roster reloads after a guest is added.
-  onMembersChanged: () => void;
 };
 
 export function GroupSummaryCard({
@@ -26,7 +21,6 @@ export function GroupSummaryCard({
   members,
   matches,
   membership,
-  onMembersChanged,
 }: GroupSummaryCardProps) {
   const currentRankIndex = membership
     ? ranking.findIndex((member) => member.id === membership.id)
@@ -48,15 +42,7 @@ export function GroupSummaryCard({
 
   return (
     <div className="space-y-5">
-      <GroupIdentityHeader
-        group={group}
-        members={members}
-        ranking={ranking}
-        memberCount={memberCount}
-        matchCount={matchCount}
-        viewerRole={membership?.role ?? null}
-        onMembersChanged={onMembersChanged}
-      />
+      <GroupIdentityHeader group={group} memberCount={memberCount} matchCount={matchCount} />
 
       <GroupSearchField />
 
@@ -152,23 +138,13 @@ function clamp01(value: number) {
 
 function GroupIdentityHeader({
   group,
-  members,
-  ranking,
   memberCount,
   matchCount,
-  viewerRole,
-  onMembersChanged,
 }: {
   group: Group;
-  members: GroupMember[];
-  ranking: GroupMember[];
   memberCount: number;
   matchCount: number;
-  viewerRole: GroupMemberRole | null;
-  onMembersChanged: () => void;
 }) {
-  const [membersOpen, setMembersOpen] = useState(false);
-
   return (
     <div className="flex flex-col items-center text-center">
       <Stat
@@ -181,18 +157,10 @@ function GroupIdentityHeader({
       <Title className="mt-base">{group.name}</Title>
 
       <Meta className="mt-snug flex items-center gap-snug text-muted-foreground">
-        <button
-          type="button"
-          onClick={() => setMembersOpen(true)}
-          className={cn(
-            'flex items-center gap-tight transition-opacity active:opacity-60',
-            TOUCH_TARGET_48,
-          )}
-        >
+        <span className="flex items-center gap-tight">
           <span className="text-foreground">{memberCount}</span>
           {memberCount === 1 ? 'jogador' : 'jogadores'}
-          <ChevronRight className="size-3.5 text-muted-foreground" />
-        </button>
+        </span>
         <Dot className="mx-0" />
         <span className="flex items-center gap-tight">
           <span className="text-foreground">{matchCount}</span>
@@ -201,17 +169,6 @@ function GroupIdentityHeader({
       </Meta>
 
       {group.description && <GroupDescription text={group.description} />}
-
-      <GroupMembersDrawer
-        open={membersOpen}
-        onOpenChange={setMembersOpen}
-        groupId={group.id}
-        groupName={group.name}
-        viewerRole={viewerRole}
-        members={members}
-        ranking={ranking}
-        onMembersChanged={onMembersChanged}
-      />
     </div>
   );
 }

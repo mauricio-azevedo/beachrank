@@ -2,11 +2,14 @@
 
 ## Status
 
-Proposed — not yet implemented.
+Accepted — implemented.
 
 The product concept lives in
-[`../../product/guests-and-invites.md`](../../product/guests-and-invites.md). The current
-codebase still implements the email-anchored claim this ADR supersedes.
+[`../../product/guests-and-invites.md`](../../product/guests-and-invites.md). Open and
+closed invites are live (backend, `/invites/:token` landing, and the invite sheets on
+the group screen). The email-anchored claim this ADR supersedes kept only its
+recipient-side flow (`/claim/:stubId`, for offers sent before the switch); the
+admin-side anchoring UI is gone.
 
 ## Context
 

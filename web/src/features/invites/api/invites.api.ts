@@ -1,11 +1,18 @@
 import { apiRequest } from '@/lib/api-client';
 import type { AcceptClaimResult, Group, GroupInvite, User } from '@/types/api';
 
-export function createGroupInvite(token: string, groupId: string): Promise<GroupInvite> {
+// Without a target this is the group's open invite; with `targetGroupMemberId` it is a
+// closed invite addressed to that guest. Plain requests reuse the active invite server-side,
+// so the returned link is stable across calls.
+export function createGroupInvite(
+  token: string,
+  groupId: string,
+  opts: { targetGroupMemberId?: string } = {},
+): Promise<GroupInvite> {
   return apiRequest<GroupInvite>(`/groups/${groupId}/invites`, {
     method: 'POST',
     token,
-    body: {},
+    body: opts.targetGroupMemberId ? { targetGroupMemberId: opts.targetGroupMemberId } : {},
   });
 }
 

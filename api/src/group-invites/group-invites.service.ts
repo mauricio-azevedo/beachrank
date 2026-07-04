@@ -18,6 +18,17 @@ import { ClaimService } from '../claims/claim.service';
 import { NotificationWriterService } from '../notifications/notification-writer.service';
 import { guestTakenOverNotificationData } from './guest-taken-over-notification';
 
+const INVITE_INCLUDE = {
+  group: true,
+  createdBy: {
+    select: {
+      id: true,
+      ...MEMBER_USER_SELECT,
+      email: true,
+    },
+  },
+} satisfies Prisma.GroupInviteInclude;
+
 @Injectable()
 export class GroupInvitesService {
   constructor(
@@ -96,6 +107,54 @@ export class GroupInvitesService {
     }
 
     const token = randomBytes(24).toString('hex');
+    const targetGroupMemberId = body.targetGroupMemberId ?? null;
+
+    // A plain request (no expiry, no usage cap) reuses the active invite for the same
+    // target instead of minting a new one: the link stays stable across sheet opens and
+    // across admins, and rows don't pile up. Explicit options always mint a fresh invite.
+    // An advisory lock serializes concurrent plain creates per (group, target), so
+    // simultaneous requests converge on one row instead of racing past the lookup.
+    if (body.maxUses === undefined && !body.expiresAt) {
+      const lockKey = `invite:${groupId}:${targetGroupMemberId ?? ''}`;
+
+      const invite = await this.prisma.$transaction(async (tx) => {
+        // $executeRaw: the lock function returns `void`, which $queryRaw can't deserialize.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+
+        const existing = await tx.groupInvite.findFirst({
+          where: {
+            groupId,
+            targetGroupMemberId,
+            revokedAt: null,
+            expiresAt: null,
+            maxUses: null,
+          },
+          orderBy: { createdAt: 'desc' },
+          include: INVITE_INCLUDE,
+        });
+
+        if (existing) {
+          return existing;
+        }
+
+        return tx.groupInvite.create({
+          data: {
+            groupId,
+            createdById: body.createdById,
+            token,
+            maxUses: null,
+            expiresAt: null,
+            targetGroupMemberId,
+          },
+          include: INVITE_INCLUDE,
+        });
+      });
+
+      return {
+        ...invite,
+        path: `/invites/${invite.token}`,
+      };
+    }
 
     const invite = await this.prisma.groupInvite.create({
       data: {
@@ -104,18 +163,9 @@ export class GroupInvitesService {
         token,
         maxUses: body.maxUses ?? null,
         expiresAt,
-        targetGroupMemberId: body.targetGroupMemberId ?? null,
+        targetGroupMemberId,
       },
-      include: {
-        group: true,
-        createdBy: {
-          select: {
-            id: true,
-            ...MEMBER_USER_SELECT,
-            email: true,
-          },
-        },
-      },
+      include: INVITE_INCLUDE,
     });
 
     return {

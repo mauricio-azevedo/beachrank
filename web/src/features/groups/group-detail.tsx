@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { GroupActions } from '@/features/groups/components/group-actions';
-import { GroupDetailTabs } from '@/features/groups/components/group-detail-tabs';
+import { GroupDetailTabs, type GroupTab } from '@/features/groups/components/group-detail-tabs';
+import { GroupEmptyState } from '@/features/groups/components/group-empty-state';
+import { GroupMembersDrawer } from '@/features/groups/components/group-members-drawer';
 import { GroupSummaryCard } from '@/features/groups/components/group-summary-card';
 import {
   getGroup,
@@ -20,7 +23,6 @@ import { MatchDrawerProvider } from '@/features/matches/match-drawer/match-drawe
 import { MemberProfileDrawerProvider } from '@/features/members/member-profile-drawer-context';
 
 const groupTabs = ['ranking', 'matches'] as const;
-type GroupTab = (typeof groupTabs)[number];
 
 type Props = {
   groupId: string;
@@ -37,11 +39,23 @@ type GroupDetailData = {
 };
 
 export function GroupDetail({ groupId, tab, autoOpenCompose = false }: Props) {
+  const router = useRouter();
   const activeTab: GroupTab = groupTabs.includes(tab as GroupTab) ? (tab as GroupTab) : 'ranking';
   const [data, setData] = useState<GroupDetailData | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [refreshKey, setRefreshKey] = useState(0);
+  // Owned here (not in the tabs) so the "N partidas" identity stat can switch tabs too.
+  const [selectedTab, setSelectedTab] = useState<GroupTab>(activeTab);
+  const [membersOpen, setMembersOpen] = useState(false);
   const loadedGroupIdRef = useRef<string | null>(null);
+
+  // Re-sync with the URL-derived tab when navigation changes it (render-time
+  // adjustment — our own tab switches already update both together).
+  const [syncedTab, setSyncedTab] = useState(activeTab);
+  if (syncedTab !== activeTab) {
+    setSyncedTab(activeTab);
+    setSelectedTab(activeTab);
+  }
 
   useEffect(() => {
     let isCurrent = true;
@@ -110,6 +124,16 @@ export function GroupDetail({ groupId, tab, autoOpenCompose = false }: Props) {
 
   const canManageMatches = Boolean(data.membership);
   const currentMembershipId = data.membership?.id ?? null;
+  // The matches list already excludes soft-deleted matches and includes the ones still
+  // processing, so "no matches" here means the group really has nothing to show yet.
+  const isEmpty = data.matches.length === 0;
+
+  function changeTab(nextTab: GroupTab) {
+    setSelectedTab(nextTab);
+    const nextUrl =
+      nextTab === 'ranking' ? `/groups/${groupId}` : `/groups/${groupId}?tab=${nextTab}`;
+    router.replace(nextUrl, { scroll: false });
+  }
 
   return (
     <MatchDrawerProvider
@@ -135,27 +159,46 @@ export function GroupDetail({ groupId, tab, autoOpenCompose = false }: Props) {
               members={data.members}
               matches={data.matches}
               membership={data.membership}
+              isEmpty={isEmpty}
+              onOpenMembers={() => setMembersOpen(true)}
+              onOpenMatches={() => changeTab('matches')}
             />
 
-            <GroupActions
-              group={data.group}
-              members={data.members}
-              ranking={data.ranking}
-              viewerRole={data.membership?.role ?? null}
-              canManageMatches={canManageMatches}
-              onMembersChanged={() => setRefreshKey((key) => key + 1)}
-            />
+            {isEmpty ? (
+              <GroupEmptyState
+                canManageMatches={canManageMatches}
+                onOpenMembers={() => setMembersOpen(true)}
+              />
+            ) : (
+              <GroupActions canManageMatches={canManageMatches} />
+            )}
           </div>
 
-          <GroupDetailTabs
-            groupId={data.group.id}
-            activeTab={activeTab}
-            ranking={data.ranking}
-            matches={data.matches}
-            canManageMatches={canManageMatches}
-            currentMembershipId={currentMembershipId}
-          />
+          {!isEmpty && (
+            <GroupDetailTabs
+              groupId={data.group.id}
+              activeTab={selectedTab}
+              onTabChange={changeTab}
+              ranking={data.ranking}
+              matches={data.matches}
+              canManageMatches={canManageMatches}
+              currentMembershipId={currentMembershipId}
+            />
+          )}
         </div>
+
+        {/* Single instance, outside the empty/non-empty branches: a background refresh
+            that flips the group between them must not unmount an open drawer. */}
+        <GroupMembersDrawer
+          open={membersOpen}
+          onOpenChange={setMembersOpen}
+          groupId={data.group.id}
+          groupName={data.group.name}
+          viewerRole={data.membership?.role ?? null}
+          members={data.members}
+          ranking={data.ranking}
+          onMembersChanged={() => setRefreshKey((key) => key + 1)}
+        />
       </MemberProfileDrawerProvider>
     </MatchDrawerProvider>
   );

@@ -1,7 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { type ReactNode, useMemo } from 'react';
 import type { GroupMember, Match } from '@/types/api';
 import { Label } from '@/components/ui/text';
 import { MatchesList } from '@/features/matches/components/matches-list';
@@ -13,6 +12,9 @@ export type GroupTab = 'ranking' | 'matches';
 type Props = {
   groupId: string;
   activeTab: GroupTab;
+  // Fully controlled: the parent owns the tab state (the "N partidas" stat in the
+  // identity header switches tabs too) and syncs the URL in one place.
+  onTabChange: (tab: GroupTab) => void;
   ranking: GroupMember[];
   matches: Match[];
   canManageMatches: boolean;
@@ -22,13 +24,12 @@ type Props = {
 export function GroupDetailTabs({
   groupId,
   activeTab,
+  onTabChange,
   ranking,
   matches,
   canManageMatches,
   currentMembershipId,
 }: Props) {
-  const router = useRouter();
-  const [selectedTab, setSelectedTab] = useState<GroupTab>(activeTab);
   const tabs = useMemo(
     () => [
       { value: 'ranking' as const, label: 'Ranking' },
@@ -37,27 +38,17 @@ export function GroupDetailTabs({
     [],
   );
 
-  useEffect(() => {
-    setSelectedTab(activeTab);
-  }, [activeTab]);
-
-  function setTab(tab: GroupTab) {
-    setSelectedTab(tab);
-    const nextUrl = tab === 'ranking' ? `/groups/${groupId}` : `/groups/${groupId}?tab=${tab}`;
-    router.replace(nextUrl, { scroll: false });
-  }
-
   return (
     <div className="space-y-5">
       <div className="flex gap-7 border-b border-divider">
         {tabs.map((tab) => {
-          const isSelected = selectedTab === tab.value;
+          const isSelected = activeTab === tab.value;
 
           return (
             <button
               key={tab.value}
               type="button"
-              onClick={() => setTab(tab.value)}
+              onClick={() => onTabChange(tab.value)}
               aria-pressed={isSelected}
               className={cn(
                 '-mb-px flex h-12 items-center gap-tight border-b-2 whitespace-nowrap transition-colors',
@@ -72,13 +63,13 @@ export function GroupDetailTabs({
         })}
       </div>
 
-      {selectedTab === 'ranking' && (
+      {activeTab === 'ranking' && (
         <TabPanel>
           <RankingList ranking={ranking} currentMembershipId={currentMembershipId} />
         </TabPanel>
       )}
 
-      {selectedTab === 'matches' && (
+      {activeTab === 'matches' && (
         <TabPanel>
           <MatchesTab matches={matches} groupId={groupId} canManage={canManageMatches} />
         </TabPanel>

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useMemo, useRef, useState } from 'react';
-import { Plus, Search, UserPlus, X } from 'lucide-react';
+import { Plus, Search, Send, UserPlus, Users, X } from 'lucide-react';
 import {
   Drawer,
   DrawerActionHeader,
@@ -28,7 +28,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from '@/components/ui/input-group';
-import { Label, Meta, Overline } from '@/components/ui/text';
+import { Heading, Label, Meta, Overline } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { getAccessToken } from '@/lib/auth';
@@ -37,6 +37,7 @@ import { MemberAvatar } from '@/components/ui/member-avatar';
 import { MemberAvatarStack } from '@/components/ui/member-avatar-stack';
 import { TOUCH_TARGET_48 } from '@/lib/touch-target';
 import { createGuestMember } from '@/features/groups/api/groups.api';
+import { InviteSheetContent } from '@/features/invites/components/invite-sheet';
 import { MemberProfileContent } from '@/features/members/member-profile-drawer';
 import type { GroupMember, GroupMemberRole } from '@/types/api';
 
@@ -95,6 +96,11 @@ export function GroupMembersDrawer({
   // Only active members can add guests (the backend allows any active member).
   const canAddGuests = viewerRole !== null;
 
+  // The lone-member view: a roster listing only yourself teaches nothing, so it gives
+  // way to a nudge to add people. Visitors browsing a one-person group still see the
+  // real list — "só você" would be a lie for them.
+  const soloViewer = viewerRole !== null && members.length <= 1;
+
   const buckets = useMemo(() => categorize(members), [members]);
 
   const [query, setQuery] = useState('');
@@ -124,21 +130,35 @@ export function GroupMembersDrawer({
     return index >= 0 ? index + 1 : undefined;
   }
 
-  // --- Add-guest sheet (queue several names, commit them together) ---
-  const [addOpen, setAddOpen] = useState(false);
+  // --- "Adicionar jogadores" sheet: one nested drawer, three views ---
+  // chooser (admin picks manual × invite) | add (guest-name queue) | invite (link + QR).
+  // A single nested sheet swapping views, because handing off between sibling nested
+  // drawers mid-animation is unproven in vaul — the match drawer set this precedent.
+  const [manageView, setManageView] = useState<ManageView | null>(null);
   const [name, setName] = useState('');
   const [queue, setQueue] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [discardOpen, setDiscardOpen] = useState(false);
 
-  function openAddSheet() {
-    setName('');
-    setQueue([]);
-    setError('');
-    setBusy(false);
-    setDiscardOpen(false);
-    setAddOpen(true);
+  const isViewerAdmin = viewerRole === 'ADMIN';
+
+  function openManage(view: ManageView) {
+    if (view.kind === 'add') {
+      setName('');
+      setQueue([]);
+      setError('');
+      setBusy(false);
+      setDiscardOpen(false);
+    }
+    setManageView(view);
+  }
+
+  function openInviteFor(member: GroupMember) {
+    openManage({
+      kind: 'invite',
+      guest: { id: member.id, name: resolveMemberName(member).fullName },
+    });
   }
 
   function enqueue() {
@@ -153,16 +173,16 @@ export function GroupMembersDrawer({
   }
 
   function requestCancel() {
-    if (queue.length > 0) {
+    if (manageView?.kind === 'add' && queue.length > 0) {
       setDiscardOpen(true);
     } else {
-      setAddOpen(false);
+      setManageView(null);
     }
   }
 
   function confirmDiscard() {
     setDiscardOpen(false);
-    setAddOpen(false);
+    setManageView(null);
   }
 
   async function commit() {
@@ -192,7 +212,7 @@ export function GroupMembersDrawer({
 
     if (failedNames.length === 0) {
       showToast(added === 1 ? '1 convidado adicionado' : `${added} convidados adicionados`);
-      setAddOpen(false);
+      setManageView(null);
       return;
     }
 
@@ -220,8 +240,8 @@ export function GroupMembersDrawer({
             <Button
               size="icon-lg"
               touchTarget
-              aria-label="Adicionar convidado"
-              onClick={openAddSheet}
+              aria-label="Adicionar jogadores"
+              onClick={() => openManage(isViewerAdmin ? { kind: 'chooser' } : { kind: 'add' })}
             >
               <Plus className="size-5" aria-hidden />
             </Button>
@@ -230,24 +250,28 @@ export function GroupMembersDrawer({
           )}
         </div>
 
-        <div className="shrink-0 px-4 pb-2">
-          <InputGroup className="h-11">
-            <InputGroupAddon>
-              <Search />
-            </InputGroupAddon>
-            <InputGroupInput
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar jogador"
-              aria-label="Buscar jogador"
-              className="[&::-webkit-search-cancel-button]:hidden"
-            />
-          </InputGroup>
-        </div>
+        {!soloViewer && (
+          <div className="shrink-0 px-4 pb-2">
+            <InputGroup className="h-11">
+              <InputGroupAddon>
+                <Search />
+              </InputGroupAddon>
+              <InputGroupInput
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Buscar jogador"
+                aria-label="Buscar jogador"
+                className="[&::-webkit-search-cancel-button]:hidden"
+              />
+            </InputGroup>
+          </div>
+        )}
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-1 [scrollbar-width:none]">
-          {noResults ? (
+          {soloViewer ? (
+            <EmptyRoster />
+          ) : noResults ? (
             <Meta className="block px-6 py-10 text-center text-faint-foreground">
               Nenhum jogador encontrado
             </Meta>
@@ -255,7 +279,12 @@ export function GroupMembersDrawer({
             <>
               <RosterSection label="Admins" members={vAdmins} onSelect={openProfile} />
               <RosterSection label="Membros" members={vMembros} onSelect={openProfile} />
-              <RosterSection label="Convidados" members={vConvidados} onSelect={openProfile} />
+              <RosterSection
+                label="Convidados"
+                members={vConvidados}
+                onSelect={openProfile}
+                onInvite={isViewerAdmin ? openInviteFor : undefined}
+              />
             </>
           )}
         </div>
@@ -277,111 +306,52 @@ export function GroupMembersDrawer({
           </DrawerContent>
         </DrawerNested>
 
-        {/* Add guests: a pending queue is discardable-with-confirmation, so the sheet
-            can't be swiped away while names are waiting to be committed. */}
+        {/* Adicionar jogadores: chooser → manual add or invite. A pending add queue is
+            discardable-with-confirmation, so the sheet can't be swiped away while names
+            are waiting to be committed. */}
         <DrawerNested
-          open={addOpen}
-          onOpenChange={(next) => (next ? setAddOpen(true) : requestCancel())}
-          dismissible={queue.length === 0}
+          open={manageView !== null}
+          onOpenChange={(next) => {
+            if (!next) requestCancel();
+          }}
+          dismissible={manageView?.kind !== 'add' || queue.length === 0}
         >
-          {/* Minimum height so the sheet doesn't shrink when the empty state gives way
-              to the first queued guest (the queue is shorter than the empty illustration). */}
-          <DrawerContent aria-describedby={undefined} size="fit" className="min-h-[80dvh]">
-            <DrawerActionHeader
-              left={{ kind: 'cancel', onClick: requestCancel }}
-              title="Adicionar convidados"
-              titleSize="sm"
-            />
+          {/* Minimum height (add view) so the sheet doesn't shrink when the empty state
+              gives way to the first queued guest (the queue is shorter than the empty
+              illustration). */}
+          <DrawerContent
+            aria-describedby={undefined}
+            size="fit"
+            className={manageView?.kind === 'add' ? 'min-h-[80dvh]' : undefined}
+          >
+            {manageView?.kind === 'chooser' && (
+              <AddPlayersChooser
+                onManual={() => openManage({ kind: 'add' })}
+                onInvite={() => openManage({ kind: 'invite', guest: null })}
+              />
+            )}
 
-            <div className="shrink-0 px-4 pb-3 pt-1">
-              <InputGroup>
-                <InputGroupInput
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      enqueue();
-                    }
-                  }}
-                  maxLength={60}
-                  autoFocus
-                  placeholder="Nome do convidado"
-                  aria-label="Nome do convidado"
-                />
-                <InputGroupAddon align="inline-end">
-                  <InputGroupButton
-                    variant="default"
-                    size="icon-sm"
-                    touchTarget
-                    aria-label="Adicionar à lista"
-                    disabled={!name.trim()}
-                    onClick={enqueue}
-                  >
-                    <Plus />
-                  </InputGroupButton>
-                </InputGroupAddon>
-              </InputGroup>
-            </div>
+            {manageView?.kind === 'invite' && (
+              <InviteSheetContent
+                groupId={groupId}
+                groupName={groupName}
+                guest={manageView.guest}
+              />
+            )}
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2 pt-1 [scrollbar-width:none]">
-              {queue.length > 0 ? (
-                <>
-                  <SectionLabel>Adicionados · {queue.length}</SectionLabel>
-                  <div className="overflow-hidden rounded-3xl bg-surface shadow-hairline">
-                    {queue.map((guestName, index) => (
-                      <div
-                        key={`${guestName}-${index}`}
-                        className="flex items-center gap-base border-t border-divider px-4 py-3 first:border-t-0"
-                      >
-                        <MemberAvatar userId={null} name={guestName} avatarColor={null} size="md" />
-                        <div className="flex min-w-0 flex-1 flex-col">
-                          <Label className="truncate text-foreground">{guestName}</Label>
-                          <Meta className="text-faint-foreground">Convidado</Meta>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => dequeue(index)}
-                          aria-label={`Remover ${guestName}`}
-                          className={cn(
-                            'flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-faint-foreground transition-transform active:scale-90',
-                            TOUCH_TARGET_48,
-                          )}
-                        >
-                          <X className="size-4" strokeWidth={2.4} aria-hidden />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-center px-6 pt-10 text-center">
-                  <span className="flex size-14 items-center justify-center rounded-full border border-dashed border-border-accent text-faint-foreground">
-                    <UserPlus className="size-6" strokeWidth={2} aria-hidden />
-                  </span>
-                  <Label className="mt-comfortable text-muted-foreground">
-                    Digite um nome e toque <span className="font-extrabold text-brand">+</span>
-                  </Label>
-                  <Meta className="mt-snug max-w-60 text-faint-foreground">
-                    Pode adicionar vários de uma vez — eles entram no grupo quando você confirmar.
-                  </Meta>
-                </div>
-              )}
-
-              {error && <Meta className="mt-base block text-center text-destructive">{error}</Meta>}
-            </div>
-
-            <DrawerFooter className="pt-2 pb-8">
-              <Button
-                size="lg"
-                className="w-full"
-                loading={busy}
-                disabled={queue.length === 0}
-                onClick={commit}
-              >
-                {queue.length > 0 ? `Adicionar ${queue.length} ao grupo` : 'Adicionar ao grupo'}
-              </Button>
-            </DrawerFooter>
+            {manageView?.kind === 'add' && (
+              <AddGuestsView
+                requestCancel={requestCancel}
+                name={name}
+                setName={setName}
+                enqueue={enqueue}
+                queue={queue}
+                dequeue={dequeue}
+                error={error}
+                busy={busy}
+                commit={commit}
+              />
+            )}
           </DrawerContent>
         </DrawerNested>
       </DrawerContent>
@@ -411,6 +381,195 @@ export function GroupMembersDrawer({
   );
 }
 
+type ManageView =
+  | { kind: 'chooser' }
+  | { kind: 'add' }
+  | { kind: 'invite'; guest: { id: string; name: string } | null };
+
+// The two ways of putting someone in the group: create the profile now and invite
+// later, or send the group link and let them enter (as a guest's heir or brand new).
+function AddPlayersChooser({ onManual, onInvite }: { onManual: () => void; onInvite: () => void }) {
+  return (
+    <div className="px-4 pt-1 pb-10">
+      <DrawerTitle className="px-2 pt-1 pb-4 text-left">Adicionar jogadores</DrawerTitle>
+      <div className="space-y-snug">
+        <ChooserOption
+          icon={<UserPlus className="size-5" aria-hidden />}
+          iconClassName="bg-muted text-foreground shadow-hairline"
+          title="Adicionar manualmente"
+          description="Agora você só adiciona o nome. Depois, convida com o link do grupo ou um link específico pro perfil."
+          onClick={onManual}
+        />
+        <ChooserOption
+          icon={<Send className="size-5 text-white" aria-hidden />}
+          iconClassName="bg-[linear-gradient(150deg,var(--accent),var(--accent-dark))] shadow-button"
+          title="Convidar pro grupo"
+          description="Você manda o link do grupo. Quem recebe escolhe: assumir um dos perfis que você adicionou ou entrar como jogador novo."
+          onClick={onInvite}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ChooserOption({
+  icon,
+  iconClassName,
+  title,
+  description,
+  onClick,
+}: {
+  icon: ReactNode;
+  iconClassName: string;
+  title: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-start gap-3.5 rounded-2xl bg-surface p-4 text-left shadow-hairline transition-transform active:scale-[0.99]"
+    >
+      <span
+        className={cn(
+          'flex size-11 shrink-0 items-center justify-center rounded-2xl',
+          iconClassName,
+        )}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <Label className="block text-foreground">{title}</Label>
+        <Meta className="mt-tight block text-muted-foreground">{description}</Meta>
+      </span>
+    </button>
+  );
+}
+
+// The guest-name queue (typed names commit together into the roster).
+function AddGuestsView({
+  requestCancel,
+  name,
+  setName,
+  enqueue,
+  queue,
+  dequeue,
+  error,
+  busy,
+  commit,
+}: {
+  requestCancel: () => void;
+  name: string;
+  setName: (value: string) => void;
+  enqueue: () => void;
+  queue: string[];
+  dequeue: (index: number) => void;
+  error: string;
+  busy: boolean;
+  commit: () => void;
+}) {
+  return (
+    <>
+      <DrawerActionHeader
+        left={{ kind: 'cancel', onClick: requestCancel }}
+        title="Adicionar convidados"
+        titleSize="sm"
+      />
+
+      <div className="shrink-0 px-4 pb-3 pt-1">
+        <InputGroup>
+          <InputGroupInput
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                enqueue();
+              }
+            }}
+            maxLength={60}
+            autoFocus
+            placeholder="Nome do convidado"
+            aria-label="Nome do convidado"
+          />
+          <InputGroupAddon align="inline-end">
+            <InputGroupButton
+              variant="default"
+              size="icon-sm"
+              touchTarget
+              aria-label="Adicionar à lista"
+              disabled={!name.trim()}
+              onClick={enqueue}
+            >
+              <Plus />
+            </InputGroupButton>
+          </InputGroupAddon>
+        </InputGroup>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2 pt-1 [scrollbar-width:none]">
+        {queue.length > 0 ? (
+          <>
+            <SectionLabel>Adicionados · {queue.length}</SectionLabel>
+            <div className="overflow-hidden rounded-3xl bg-surface shadow-hairline">
+              {queue.map((guestName, index) => (
+                <div
+                  key={`${guestName}-${index}`}
+                  className="flex items-center gap-base border-t border-divider px-4 py-3 first:border-t-0"
+                >
+                  <MemberAvatar userId={null} name={guestName} avatarColor={null} size="md" />
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <Label className="truncate text-foreground">{guestName}</Label>
+                    <Meta className="text-faint-foreground">Convidado</Meta>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => dequeue(index)}
+                    aria-label={`Remover ${guestName}`}
+                    className={cn(
+                      'flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-faint-foreground transition-transform active:scale-90',
+                      TOUCH_TARGET_48,
+                    )}
+                  >
+                    <X className="size-4" strokeWidth={2.4} aria-hidden />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center px-6 pt-10 text-center">
+            <span className="flex size-14 items-center justify-center rounded-full border border-dashed border-border-accent text-faint-foreground">
+              <UserPlus className="size-6" strokeWidth={2} aria-hidden />
+            </span>
+            <Label className="mt-comfortable text-muted-foreground">
+              Digite um nome e toque <span className="font-extrabold text-brand">+</span>
+            </Label>
+            <Meta className="mt-snug max-w-60 text-faint-foreground">
+              Pode adicionar vários de uma vez — eles entram no grupo quando você confirmar.
+            </Meta>
+          </div>
+        )}
+
+        {error && <Meta className="mt-base block text-center text-destructive">{error}</Meta>}
+      </div>
+
+      <DrawerFooter className="pt-2 pb-8">
+        <Button
+          size="lg"
+          className="w-full"
+          loading={busy}
+          disabled={queue.length === 0}
+          onClick={commit}
+        >
+          {queue.length > 0 ? `Adicionar ${queue.length} ao grupo` : 'Adicionar ao grupo'}
+        </Button>
+      </DrawerFooter>
+    </>
+  );
+}
+
 // Discard-confirmation copy names who'd be lost, so leaving isn't an accident.
 function discardTitle(names: string[]): string {
   const n = names.length;
@@ -427,14 +586,33 @@ function discardMessage(names: string[]): string {
   return `${names[0]}, ${names[1]} e mais ${n - 2} ainda não entraram no grupo. Se sair agora, todos serão perdidos.`;
 }
 
+// Only the viewer in the group: their own row teaches nothing, so the list gives
+// way to the next step. Solo viewers are always members, so the '+' is there.
+function EmptyRoster() {
+  return (
+    <div className="flex flex-col items-center px-6 pb-20 pt-14 text-center">
+      <span className="flex size-24 items-center justify-center rounded-full bg-surface text-faint-foreground shadow-hairline">
+        <Users className="size-10" strokeWidth={1.6} aria-hidden />
+      </span>
+      <Heading className="mt-comfortable">Só você por aqui</Heading>
+      <Meta className="mt-snug max-w-60 text-muted-foreground">
+        Toque no <span className="font-extrabold text-brand">+</span> para adicionar.
+      </Meta>
+    </div>
+  );
+}
+
 function RosterSection({
   label,
   members,
   onSelect,
+  onInvite,
 }: {
   label: string;
   members: GroupMember[];
   onSelect: (memberId: string) => void;
+  // Admin-only: renders a "Convidar" pill on each row (guests waiting for their link).
+  onInvite?: (member: GroupMember) => void;
 }) {
   if (members.length === 0) {
     return null;
@@ -447,7 +625,7 @@ function RosterSection({
       </SectionLabel>
       <div className="overflow-hidden rounded-3xl bg-surface shadow-hairline">
         {members.map((member) => (
-          <RosterRow key={member.id} member={member} onSelect={onSelect} />
+          <RosterRow key={member.id} member={member} onSelect={onSelect} onInvite={onInvite} />
         ))}
       </div>
     </section>
@@ -457,9 +635,11 @@ function RosterSection({
 function RosterRow({
   member,
   onSelect,
+  onInvite,
 }: {
   member: GroupMember;
   onSelect: (memberId: string) => void;
+  onInvite?: (member: GroupMember) => void;
 }) {
   const { fullName } = resolveMemberName(member);
 
@@ -479,6 +659,19 @@ function RosterRow({
         size="md"
       />
       <Label className="min-w-0 flex-1 truncate text-foreground">{fullName}</Label>
+      {onInvite && (
+        // Above the stretched row button, so the pill wins the tap.
+        <Button
+          size="sm"
+          touchTarget
+          className="relative z-10 shrink-0"
+          aria-label={`Convidar ${fullName}`}
+          onClick={() => onInvite(member)}
+        >
+          <Send aria-hidden />
+          Convidar
+        </Button>
+      )}
     </div>
   );
 }

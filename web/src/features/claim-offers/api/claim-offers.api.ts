@@ -1,44 +1,7 @@
 import { apiRequest } from '@/lib/api-client';
-import type { AcceptClaimResult, ClaimEmailState, ClaimOfferDetail } from '@/types/api';
+import type { AcceptClaimResult, ClaimOfferDetail } from '@/types/api';
 
-// --- Admin: anchor / clear / read the email on a stub ---
-
-export function setClaimEmail(
-  token: string,
-  groupId: string,
-  memberId: string,
-  email: string,
-): Promise<ClaimEmailState> {
-  return apiRequest<ClaimEmailState>(`/groups/${groupId}/members/${memberId}/claim-email`, {
-    method: 'POST',
-    token,
-    body: { email },
-  });
-}
-
-export function clearClaimEmail(
-  token: string,
-  groupId: string,
-  memberId: string,
-): Promise<ClaimEmailState> {
-  return apiRequest<ClaimEmailState>(`/groups/${groupId}/members/${memberId}/claim-email`, {
-    method: 'DELETE',
-    token,
-  });
-}
-
-export function getClaimEmailState(
-  token: string,
-  groupId: string,
-  memberId: string,
-): Promise<ClaimEmailState> {
-  return apiRequest<ClaimEmailState>(`/groups/${groupId}/members/${memberId}/claim-email`, {
-    token,
-    cache: 'no-store',
-  });
-}
-
-// --- Recipient: read / confirm / decline the offer ---
+// --- Recipient: read / confirm / decline the offer (legacy email-anchored claims) ---
 
 export function getClaimOffer(token: string, stubId: string): Promise<ClaimOfferDetail> {
   return apiRequest<ClaimOfferDetail>(`/me/claims/${stubId}`, {

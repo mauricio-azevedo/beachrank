@@ -75,20 +75,6 @@ export function getRoutePolicy(pathname: string): RoutePolicy {
     };
   }
 
-  const inviteMatch = normalizedPathname.match(/^\/groups\/([^/]+)\/invite$/);
-
-  if (inviteMatch?.[1]) {
-    return {
-      access: {
-        kind: 'auth',
-        requiresCheck: true,
-        groupId: inviteMatch[1],
-        requiredRole: 'ADMIN',
-      },
-      chrome: primaryAppChrome,
-    };
-  }
-
   const newMatchMatch = normalizedPathname.match(/^\/groups\/([^/]+)\/matches\/new$/);
 
   if (newMatchMatch?.[1]) {

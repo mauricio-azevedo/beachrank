@@ -99,37 +99,37 @@ create(@Param('groupId') groupId: string, @CurrentUser() user: AuthUser,
 
 ## 10. API route map
 
-| Method & path                                                             | Auth                         | Module          |
-| ------------------------------------------------------------------------- | ---------------------------- | --------------- |
-| `POST /auth/register`, `POST /auth/login`                                 | public                       | auth            |
-| `GET /auth/me`                                                            | header token                 | auth            |
-| `GET /feed`                                                               | optional                     | feed            |
-| `GET /feed/groups/:groupId`                                               | optional                     | feed            |
-| `POST /groups`                                                            | required                     | groups          |
-| `GET /groups/home`                                                        | optional                     | groups          |
-| `GET /groups`, `GET /groups/:groupId`                                     | public                       | groups          |
-| `POST /groups/:groupId/invites` (optional `targetGroupMemberId` ⇒ closed) | required (admin)             | group-invites   |
-| `GET /groups/:groupId/invites/:token`, `POST …/:token/accept`             | varies                       | group-invites   |
-| `GET /invites/:token` (OPEN ⇒ guest roster · CLOSED ⇒ target summary)     | public/required              | public-invites  |
-| `GET /invites/:token/guests/:guestId/summary`                             | public (token)               | public-invites  |
-| `POST /invites/:token/claim/:guestId`, `POST /invites/:token/accept`      | required                     | public-invites  |
-| `POST/DELETE/GET /groups/:groupId/members/:memberId/claim-email`          | required (admin)             | claim-offers    |
-| `GET/POST /me/claims/:stubId`, `…/confirm`, `…/decline`                   | required (email match)       | claim-offers    |
-| `POST /groups/:groupId/members`, `GET …/members`                          | varies                       | members         |
-| `POST /groups/:groupId/members/guest`                                     | required (any active member) | members         |
-| `GET /groups/:groupId/members/:memberId/profile`                          | public                       | members         |
-| `POST /groups/:groupId/members/:memberId/unlink`                          | required (admin)             | members         |
-| `DELETE /groups/:groupId/members/:memberId`                               | required (admin)             | members         |
-| `POST /groups/:groupId/matches`                                           | required                     | matches         |
-| `GET …/matches`, `GET …/matches/:id`                                      | varies                       | matches         |
-| `PATCH …/matches/:id`, `DELETE …/matches/:id`                             | required                     | matches         |
-| `GET /groups/:groupId/ranking`                                            | varies                       | ranking         |
-| `GET /groups/:groupId/processing-jobs`, `POST …/retry-failed`             | varies                       | processing      |
-| `GET /me/groups`                                                          | required                     | me              |
-| `GET /me/profile/summary`, `GET /me/profile/matches`                      | required                     | me              |
-| `PATCH /me/profile`, `PATCH /me/password`                                 | required                     | me              |
-| `GET /users/:userId/profile/summary`, `…/profile/matches`, `…/groups`     | viewer-scoped                | users           |
-| `GET /home/weekly-highlights`                                             | optional                     | home-highlights |
+| Method & path                                                                                                                             | Auth                         | Module          |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | --------------- |
+| `POST /auth/register`, `POST /auth/login`                                                                                                 | public                       | auth            |
+| `GET /auth/me`                                                                                                                            | header token                 | auth            |
+| `GET /feed`                                                                                                                               | optional                     | feed            |
+| `GET /feed/groups/:groupId`                                                                                                               | optional                     | feed            |
+| `POST /groups`                                                                                                                            | required                     | groups          |
+| `GET /groups/home`                                                                                                                        | optional                     | groups          |
+| `GET /groups`, `GET /groups/:groupId`                                                                                                     | public                       | groups          |
+| `POST /groups/:groupId/invites` (optional `targetGroupMemberId` ⇒ closed; a plain request reuses the active invite, so links stay stable) | required (admin)             | group-invites   |
+| `GET /groups/:groupId/invites/:token`, `POST …/:token/accept`                                                                             | varies                       | group-invites   |
+| `GET /invites/:token` (OPEN ⇒ guest roster · CLOSED ⇒ target summary)                                                                     | public/required              | public-invites  |
+| `GET /invites/:token/guests/:guestId/summary`                                                                                             | public (token)               | public-invites  |
+| `POST /invites/:token/claim/:guestId`, `POST /invites/:token/accept`                                                                      | required                     | public-invites  |
+| `POST/DELETE/GET /groups/:groupId/members/:memberId/claim-email` (legacy — no UI creates anchors anymore)                                 | required (admin)             | claim-offers    |
+| `GET/POST /me/claims/:stubId`, `…/confirm`, `…/decline`                                                                                   | required (email match)       | claim-offers    |
+| `POST /groups/:groupId/members`, `GET …/members`                                                                                          | varies                       | members         |
+| `POST /groups/:groupId/members/guest`                                                                                                     | required (any active member) | members         |
+| `GET /groups/:groupId/members/:memberId/profile`                                                                                          | public                       | members         |
+| `POST /groups/:groupId/members/:memberId/unlink`                                                                                          | required (admin)             | members         |
+| `DELETE /groups/:groupId/members/:memberId`                                                                                               | required (admin)             | members         |
+| `POST /groups/:groupId/matches`                                                                                                           | required                     | matches         |
+| `GET …/matches`, `GET …/matches/:id`                                                                                                      | varies                       | matches         |
+| `PATCH …/matches/:id`, `DELETE …/matches/:id`                                                                                             | required                     | matches         |
+| `GET /groups/:groupId/ranking`                                                                                                            | varies                       | ranking         |
+| `GET /groups/:groupId/processing-jobs`, `POST …/retry-failed`                                                                             | varies                       | processing      |
+| `GET /me/groups`                                                                                                                          | required                     | me              |
+| `GET /me/profile/summary`, `GET /me/profile/matches`                                                                                      | required                     | me              |
+| `PATCH /me/profile`, `PATCH /me/password`                                                                                                 | required                     | me              |
+| `GET /users/:userId/profile/summary`, `…/profile/matches`, `…/groups`                                                                     | viewer-scoped                | users           |
+| `GET /home/weekly-highlights`                                                                                                             | optional                     | home-highlights |
 
 Routes are use-case oriented (`GET /me/profile/summary`), never UI-shaped. No
 global `/api` prefix.

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { ChevronRight, Info, UserPlus } from 'lucide-react';
+import { ChevronRight, Info, Send } from 'lucide-react';
 import { Drawer, DrawerNested, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import { Dot, Label, Meta } from '@/components/ui/text';
 import { MemberAvatar } from '@/components/ui/member-avatar';
@@ -12,7 +12,7 @@ import { getCurrentUserIdFromAccessToken } from '@/lib/auth';
 import { memberRoleTag } from '@/lib/member-role';
 import type { GroupMemberRole } from '@/types/api';
 import { getMemberProfile } from './api/members.api';
-import { StubClaimEmailPanel } from './components/stub-claim-email-panel';
+import { InviteSheetContent } from '@/features/invites/components/invite-sheet';
 import type { MemberProfile } from './types/member-profile.type';
 
 type MemberProfileDrawerProps = {
@@ -85,8 +85,8 @@ export function MemberProfileContent({
 }: ContentProps) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [profile, setProfile] = useState<MemberProfile | null>(null);
-  // "Vincular conta" opens as a nested sheet where an admin anchors an email to the stub.
-  const [emailOpen, setEmailOpen] = useState(false);
+  // "Convidar" opens the guest's invite (link + QR) as a nested sheet.
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   useEffect(() => {
     // The content remounts per member (keyed), so initial state is already
@@ -188,7 +188,7 @@ export function MemberProfileContent({
             <Info className="mt-px size-4 shrink-0 text-tag-warn" aria-hidden />
             <Meta className="text-left font-medium text-tag-warn/90">
               {isViewerAdmin
-                ? 'Jogador sem conta. Convide-o pro grupo pelo email — as partidas dele vão junto.'
+                ? 'Jogador sem conta. Convide-o com um link — as partidas dele vão junto.'
                 : 'Jogador sem conta. Um admin do grupo pode convidá-lo.'}
             </Meta>
           </div>
@@ -197,20 +197,19 @@ export function MemberProfileContent({
             <>
               <button
                 type="button"
-                onClick={() => setEmailOpen(true)}
+                onClick={() => setInviteOpen(true)}
                 className="mt-3 flex h-12 items-center justify-center gap-2 rounded-pill bg-brand text-brand-foreground shadow-button transition-opacity active:opacity-90"
               >
-                <UserPlus className="size-4.5 text-brand-foreground" aria-hidden />
+                <Send className="size-4.5 text-brand-foreground" aria-hidden />
                 <Label className="text-brand-foreground">Convidar</Label>
               </button>
 
-              <DrawerNested open={emailOpen} onOpenChange={setEmailOpen}>
+              <DrawerNested open={inviteOpen} onOpenChange={setInviteOpen}>
                 <DrawerContent aria-describedby={undefined} size="fit">
-                  <StubClaimEmailPanel
+                  <InviteSheetContent
                     groupId={groupId}
-                    memberId={memberId}
-                    stubName={profile.displayName}
-                    onBack={() => setEmailOpen(false)}
+                    groupName={groupName}
+                    guest={{ id: memberId, name: profile.displayName }}
                   />
                 </DrawerContent>
               </DrawerNested>

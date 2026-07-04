@@ -89,6 +89,8 @@ export type GroupInvite = {
   revokedAt: string | null;
   uses: number;
   maxUses: number | null;
+  // null → open invite (group link); set → closed invite addressed to that guest.
+  targetGroupMemberId: string | null;
   createdAt: string;
   updatedAt: string;
   path: string;
@@ -272,16 +274,8 @@ export type AppNotification = {
   createdAt: string;
 };
 
-// Email-anchored claim. State the admin sees on a stub, and the offer the recipient confirms.
-export type ClaimEmailStatus = 'PENDING' | 'DECLINED';
-
-export type ClaimEmailState = {
-  email: string | null;
-  status: ClaimEmailStatus | null;
-  notified: boolean;
-  accountExists: boolean;
-};
-
+// The email-anchored claim offer a recipient reviews (legacy flow, recipient side —
+// invites via link superseded the admin-side email anchoring, ADR 0004).
 export type ClaimOfferDetail = {
   stubGroupMemberId: string;
   groupId: string;

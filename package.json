@@ -1,5 +1,7 @@
 {
   "scripts": {
+    "lint": "npm --prefix api run lint && npm --prefix web run lint",
+    "lint:check": "npm --prefix api run lint:check && npm --prefix web run lint:check",
     "format": "prettier . --write --ignore-unknown",
     "format:check": "prettier . --check --ignore-unknown"
   },

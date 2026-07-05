@@ -18,17 +18,6 @@ import { ClaimService } from '../claims/claim.service';
 import { NotificationWriterService } from '../notifications/notification-writer.service';
 import { guestTakenOverNotificationData } from './guest-taken-over-notification';
 
-const INVITE_INCLUDE = {
-  group: true,
-  createdBy: {
-    select: {
-      id: true,
-      ...MEMBER_USER_SELECT,
-      email: true,
-    },
-  },
-} satisfies Prisma.GroupInviteInclude;
-
 @Injectable()
 export class GroupInvitesService {
   constructor(
@@ -129,8 +118,9 @@ export class GroupInvitesService {
             expiresAt: null,
             maxUses: null,
           },
-          orderBy: { createdAt: 'desc' },
-          include: INVITE_INCLUDE,
+          // id breaks createdAt ties (legacy data may hold several plain invites),
+          // so "the newest" is deterministic and the shared link never flaps.
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         });
 
         if (existing) {
@@ -146,7 +136,6 @@ export class GroupInvitesService {
             expiresAt: null,
             targetGroupMemberId,
           },
-          include: INVITE_INCLUDE,
         });
       });
 
@@ -156,6 +145,8 @@ export class GroupInvitesService {
       };
     }
 
+    // Bare row on purpose: the sheet reads only `path`, and echoing relations here
+    // would ship the (possibly other) creator's account data as dead payload.
     const invite = await this.prisma.groupInvite.create({
       data: {
         groupId,
@@ -165,7 +156,6 @@ export class GroupInvitesService {
         expiresAt,
         targetGroupMemberId,
       },
-      include: INVITE_INCLUDE,
     });
 
     return {

@@ -23,7 +23,14 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
     <AppShell
       chrome={{ back: { fallbackHref: '/' }, trailing: <GroupOptionsMenu groupId={groupId} /> }}
     >
-      <GroupDetail groupId={groupId} tab={tab} autoOpenCompose={compose === 'match'} />
+      {/* Keyed per group: client state (open sheets, tab) must not leak across
+          /groups/A → /groups/B, where the component instance would otherwise survive. */}
+      <GroupDetail
+        key={groupId}
+        groupId={groupId}
+        tab={tab}
+        autoOpenCompose={compose === 'match'}
+      />
     </AppShell>
   );
 }

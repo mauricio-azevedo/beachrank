@@ -40,6 +40,14 @@ built in) and `components/ui/drawer.tsx` (`DrawerActionHeader` — one header ac
   (password-view) parse backend messages separately — consolidate into one mapper (API layer).
 - **Real-time field guidance is one-off.** `password-view`'s `PasswordGuidance` (live, colored) is
   the good pattern; auth/create-group only validate on submit.
+- **Info/warn explainer row duplicated.** The `Info` icon + `Meta` row exists boxed/warn in
+  `member-profile-drawer.tsx` and bare/muted in `invite-sheet.tsx` (back-to-back in the same flow);
+  at the next touch, extract an `InfoRow` with tone + boxed/plain variants.
+- **Group-detail tab state is triple-tracked.** `activeTab` (URL prop) + `selectedTab` +
+  `syncedTab` mirror in `group-detail.tsx`; collapses to `pendingTab ?? activeTab` with a
+  render-time clear.
+- **`AddGuestsView` prop-drills 9 values** (`group-members-drawer.tsx`) for a single call site;
+  inline it back into the view machine or pass one flow object when next touched.
 
 ## Low — cosmetic / premature to share
 
@@ -49,3 +57,8 @@ built in) and `components/ui/drawer.tsx` (`DrawerActionHeader` — one header ac
   second use appears.
 - **Custom action buttons** (logout row, pill form buttons) use bespoke classes rather than
   `<Button>`; revisit if a `danger` button variant is added.
+- **Off-ladder gaps in the invite surfaces.** `gap-2.5` (`invite-sheet.tsx` explainer/link rows)
+  and `gap-3.5` (`group-members-drawer.tsx` ChooserOption) sit outside the spacing ladder
+  (frontend-conventions §9); move to `gap-snug`/`gap-base` on the next pass over these files.
+- **`isEmpty` prop on `GroupSummaryCard` is derivable** from the `matches` prop it already
+  receives; derive inside the card to keep one source of truth.

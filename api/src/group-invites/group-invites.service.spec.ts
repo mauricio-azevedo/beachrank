@@ -69,7 +69,7 @@ describe('GroupInvitesService.create', () => {
           expiresAt: null,
           maxUses: null,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       }),
     );
     expect(tx.groupInvite.create).not.toHaveBeenCalled();

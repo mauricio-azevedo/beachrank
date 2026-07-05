@@ -20,7 +20,9 @@ export function GroupEmptyState({ canManageMatches, onOpenMembers }: Props) {
     <div className="flex flex-col items-center pt-loose text-center">
       <Title>Nenhuma partida ainda</Title>
       <Body className="mt-base max-w-72 text-muted-foreground">
-        Registre a primeira partida e adicione os jogadores durante o registro.
+        {canManageMatches
+          ? 'Registre a primeira partida e adicione os jogadores durante o registro.'
+          : 'As partidas e o ranking do grupo vão aparecer aqui.'}
       </Body>
 
       {canManageMatches && (

@@ -180,7 +180,7 @@ See `docs/architecture/adr/`:
 - `0001-persist-feed-events.md` — feed events are persisted, not reconstructed.
 - `0002-snapshot-match-ratings.md` — match/player rating snapshots are stored.
 - `0003-use-contextual-skeletons-for-route-loading.md` — frontend loading UX.
-- `0004-unify-guest-invite-and-claim.md` — guest invite + claim become one primitive (proposed).
+- `0004-unify-guest-invite-and-claim.md` — guest invite + claim become one primitive (accepted, implemented).
 
 Deeper subsystem docs: [`processing-jobs.md`](./processing-jobs.md),
 [`feed-architecture.md`](./feed-architecture.md),

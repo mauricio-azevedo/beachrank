@@ -134,6 +134,10 @@ export function GroupMembersDrawer({
   // chooser (admin picks manual × invite) | add (guest-name queue) | invite (link + QR).
   // A single nested sheet swapping views, because handing off between sibling nested
   // drawers mid-animation is unproven in vaul — the match drawer set this precedent.
+  // Open state and view are separate on purpose: the view is kept after close so the
+  // sheet still has content (and its min-height) to render during the slide-down
+  // animation; openManage replaces it on the next open.
+  const [manageOpen, setManageOpen] = useState(false);
   const [manageView, setManageView] = useState<ManageView | null>(null);
   const [name, setName] = useState('');
   const [queue, setQueue] = useState<string[]>([]);
@@ -152,6 +156,7 @@ export function GroupMembersDrawer({
       setDiscardOpen(false);
     }
     setManageView(view);
+    setManageOpen(true);
   }
 
   function openInviteFor(member: GroupMember) {
@@ -176,13 +181,13 @@ export function GroupMembersDrawer({
     if (manageView?.kind === 'add' && queue.length > 0) {
       setDiscardOpen(true);
     } else {
-      setManageView(null);
+      setManageOpen(false);
     }
   }
 
   function confirmDiscard() {
     setDiscardOpen(false);
-    setManageView(null);
+    setManageOpen(false);
   }
 
   async function commit() {
@@ -212,7 +217,7 @@ export function GroupMembersDrawer({
 
     if (failedNames.length === 0) {
       showToast(added === 1 ? '1 convidado adicionado' : `${added} convidados adicionados`);
-      setManageView(null);
+      setManageOpen(false);
       return;
     }
 
@@ -310,7 +315,7 @@ export function GroupMembersDrawer({
             discardable-with-confirmation, so the sheet can't be swiped away while names
             are waiting to be committed. */}
         <DrawerNested
-          open={manageView !== null}
+          open={manageOpen}
           onOpenChange={(next) => {
             if (!next) requestCancel();
           }}

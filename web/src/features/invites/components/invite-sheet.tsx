@@ -31,7 +31,7 @@ type SheetStatus =
 export function InviteSheetContent({ groupId, groupName, guest }: InviteSheetContentProps) {
   const [status, setStatus] = useState<SheetStatus>({ state: 'loading' });
   const [attempt, setAttempt] = useState(0);
-  const { copied, copy } = useCopyToClipboard();
+  const { copied, failed, copy } = useCopyToClipboard();
 
   const guestId = guest?.id ?? null;
 
@@ -152,6 +152,12 @@ export function InviteSheetContent({ groupId, groupName, guest }: InviteSheetCon
               {copied ? 'Copiado' : 'Copiar'}
             </Button>
           </div>
+
+          {failed && (
+            <Meta className="mt-snug block text-center text-destructive">
+              Não foi possível copiar — use o QR ou compartilhe o link acima.
+            </Meta>
+          )}
         </>
       )}
     </div>

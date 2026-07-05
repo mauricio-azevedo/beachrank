@@ -139,7 +139,10 @@ export function getProfileMatches(token: string): Promise<ProfileMatchListItem[]
 - **UI derived from a member's data has a single source.** A member's avatar
   (`MemberAvatar`, `components/ui/member-avatar.tsx`) and role badge
   (`memberRoleTag`, `lib/member-role.ts`) are defined once and reused everywhere a
-  member is shown (ranking, match cards, drawers, pickers). Don't re-inline
+  member is shown (ranking, match cards, drawers, pickers). The same goes for a
+  group's monogram (`GroupAvatar`, `components/ui/group-avatar.tsx` — initials + the
+  stable per-group tint from `lib/group-identity.ts`) and for the icon-circle
+  empty/terminal state (`EmptyState`, `components/ui/empty-state.tsx`). Don't re-inline
   `userId === null` styling or role/status labels per screen — that's what let the
   same player read "Convidado" on one screen and "Sem conta" on another. The label is
   UI copy derived from data the client already has; keep it in a shared frontend

@@ -2,10 +2,8 @@ import Link from 'next/link';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Heading, Label, Meta, Stat } from '@/components/ui/text';
-import { getGroupInitials } from '@/features/groups/helpers/group-initials.helper';
-import { hueFromId } from '@/features/weekly-highlights/helpers/highlight-style';
+import { GroupAvatar } from '@/components/ui/group-avatar';
 import type { ProfileSummaryGroup } from '../types/profile-summary-group.type';
-import { ProfileMonogram } from './profile-monogram';
 
 export function ProfileGroupsRail({ groups }: { groups: ProfileSummaryGroup[] }) {
   if (groups.length === 0) {
@@ -30,23 +28,13 @@ export function ProfileGroupsRail({ groups }: { groups: ProfileSummaryGroup[] })
 }
 
 function GroupRailCard({ group }: { group: ProfileSummaryGroup }) {
-  const hue = hueFromId(group.id);
-
   return (
     <Link
       href={`/groups/${group.id}`}
       className="flex w-[9.875rem] shrink-0 flex-col rounded-card bg-surface p-4 shadow-card transition-transform active:scale-[0.98]"
     >
       <div className="flex items-center justify-between">
-        <ProfileMonogram
-          className="size-[2.875rem] rounded-[0.875rem] text-stat-sm"
-          style={{
-            background: `linear-gradient(150deg, oklch(60% 0.13 ${hue}), oklch(50% 0.13 ${hue}))`,
-            boxShadow: 'inset 0 0 0 1px var(--border-accent)',
-          }}
-        >
-          {getGroupInitials(group.name)}
-        </ProfileMonogram>
+        <GroupAvatar name={group.name} groupId={group.id} size="md" />
         <RankTrend rankDelta={group.rankDelta} />
       </div>
 

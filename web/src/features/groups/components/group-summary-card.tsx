@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { Search } from 'lucide-react';
 import type { Group, GroupMember, Match, MyGroup } from '@/types/api';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
-import { Body, Dot, Label, Meta, Stat, Title } from '@/components/ui/text';
+import { Body, Dot, Label, Meta, Title } from '@/components/ui/text';
+import { GroupAvatar } from '@/components/ui/group-avatar';
 import { StandingCard } from '@/features/groups/components/standing-card';
-import { getGroupInitials } from '@/features/groups/helpers/group-initials.helper';
 
 export type GroupSummaryCardProps = {
   group: Group;
@@ -158,12 +158,13 @@ function GroupIdentityHeader({
 }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <Stat
-        size="lg"
-        className="flex size-[74px] items-center justify-center rounded-full bg-[linear-gradient(150deg,var(--accent),var(--accent-dark))] text-white shadow-[0_8px_20px_rgba(31,73,135,0.45),inset_0_0_0_1px_var(--border-accent)]"
-      >
-        {getGroupInitials(group.name)}
-      </Stat>
+      <GroupAvatar
+        name={group.name}
+        groupId={group.id}
+        size="hero"
+        tone="accent"
+        className="shadow-[0_8px_20px_rgba(31,73,135,0.45),inset_0_0_0_1px_var(--border-accent)]"
+      />
 
       <Title className="mt-base">{group.name}</Title>
 

@@ -6,7 +6,7 @@ import type { GroupCreatedFeedMetadata } from '../types/group-created-feed-metad
 import type { MemberJoinedFeedMetadata } from '../types/member-joined-feed-metadata.type';
 import type { DominantWinFeedMetadata } from '../types/dominant-win-feed-metadata.type';
 import type { CloseMatchFeedMetadata } from '../types/close-match-feed-metadata.type';
-import { getGroupInitials } from '../helpers/feed-item-style.helper';
+import { GroupAvatar } from '@/components/ui/group-avatar';
 import { formatFeedItemTime } from '../helpers/feed-item-time.helper';
 import { getFeedItemHref } from '@/features/feed/helpers/feed-item-link.helper';
 import { UserNameLink } from '@/features/users/components/user-name-link';
@@ -42,8 +42,8 @@ export function FeedItemCard({ item, context = 'global' }: Props) {
     <Card>
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center text-sm font-semibold">
-            {getGroupInitials(title)}
+          <div className="relative shrink-0">
+            <GroupAvatar name={title} groupId={item.group?.id} size="md" />
             <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center">
               <Sparkles className="h-3 w-3" />
             </span>

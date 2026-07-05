@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { Activity, TrendingUp, Trophy, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Body, Heading, Meta } from '@/components/ui/text';
+import { Body, Meta } from '@/components/ui/text';
 import { buildAuthPath } from '@/features/auth/auth-navigation';
+import { EmptyState } from '@/components/ui/empty-state';
 
 // What the user gets by signing in — the reason to tap "Entrar". It links to
 // /login and, on success, lands back on the profile.
@@ -28,12 +29,11 @@ const VALUE_PROPS = [
 
 export function ProfileSignedOutState() {
   return (
-    <div className="flex min-h-[68vh] flex-col items-center justify-center px-2 text-center">
-      <div className="flex size-[5.5rem] items-center justify-center rounded-full bg-surface shadow-hairline">
-        <UserRound className="size-10 text-faint-foreground" strokeWidth={1.8} aria-hidden />
-      </div>
-
-      <Heading className="mt-section">Entre na sua conta</Heading>
+    <EmptyState
+      className="min-h-[68vh] justify-center px-2"
+      icon={<UserRound className="size-10 text-faint-foreground" strokeWidth={1.8} aria-hidden />}
+      title="Entre na sua conta"
+    >
 
       <div className="mt-loose flex w-full max-w-[19rem] flex-col gap-base text-left">
         {VALUE_PROPS.map(({ icon: Icon, title, description }) => (
@@ -52,6 +52,6 @@ export function ProfileSignedOutState() {
       <Button asChild size="lg" className="mt-loose w-full max-w-[19rem]">
         <Link href={buildAuthPath({ mode: 'login', redirect: '/profile' })}>Entrar</Link>
       </Button>
-    </div>
+    </EmptyState>
   );
 }

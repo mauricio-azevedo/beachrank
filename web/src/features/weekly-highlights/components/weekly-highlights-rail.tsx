@@ -6,7 +6,8 @@ import { MemberAvatar } from '@/components/ui/member-avatar';
 import { Dot, Heading, Label, Meta } from '@/components/ui/text';
 import { getWeeklyHighlights } from '@/features/weekly-highlights/api/weekly-highlights.api';
 import { highlightSentence } from '@/features/weekly-highlights/helpers/highlight-copy';
-import { highlightStyle, hueFromId } from '@/features/weekly-highlights/helpers/highlight-style';
+import { highlightStyle } from '@/features/weekly-highlights/helpers/highlight-style';
+import { hueFromId } from '@/lib/group-identity';
 import type { WeeklyHighlightCard } from '@/features/weekly-highlights/types/weekly-highlight.type';
 import { getAccessToken } from '@/lib/auth';
 

@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { Plus, UserPlus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Body, Heading, Label, Title } from '@/components/ui/text';
+import { Body, Heading, Label } from '@/components/ui/text';
 import { getAllGroups } from '@/features/groups/api/groups.api';
 import type { GroupHomeCard } from '@/features/groups/types/group-home.type';
 import { buildAuthPath } from '@/features/auth/auth-navigation';
 import { getAccessToken } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { HomeGroupCard } from './home-group-card';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type Filter = 'Meus' | 'Todos' | 'Movimentados' | 'Novos';
 
@@ -122,22 +123,22 @@ export function GroupsSection({
 
 function GroupsEmptyState({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
-    <div className="flex flex-col items-center px-4 pt-2 text-center">
-      <div className="flex size-20 items-center justify-center rounded-full bg-surface shadow-hairline">
-        {isLoggedIn ? (
+    <EmptyState
+      className="px-4 pt-2"
+      icon={
+        isLoggedIn ? (
           <UserPlus className="size-8 text-faint-foreground" strokeWidth={1.7} aria-hidden />
         ) : (
           <Users className="size-8 text-faint-foreground" strokeWidth={1.7} aria-hidden />
-        )}
-      </div>
-      <Title className="mt-5">
-        {isLoggedIn ? 'Nenhum grupo ainda' : 'Entre pra ver seus grupos'}
-      </Title>
-      <Body className="mt-snug max-w-[18rem] text-muted-foreground">
-        {isLoggedIn
+        )
+      }
+      title={isLoggedIn ? 'Nenhum grupo ainda' : 'Entre pra ver seus grupos'}
+      hint={
+        isLoggedIn
           ? 'Entre num grupo pra registrar partidas e acompanhar seu ranking.'
-          : 'Faça login pra acompanhar seu ranking e registrar partidas.'}
-      </Body>
+          : 'Faça login pra acompanhar seu ranking e registrar partidas.'
+      }
+    >
       <div className="mt-5 flex w-full max-w-[19rem] flex-col gap-snug">
         {isLoggedIn ? (
           <Button asChild size="lg">
@@ -152,7 +153,7 @@ function GroupsEmptyState({ isLoggedIn }: { isLoggedIn: boolean }) {
           </Button>
         )}
       </div>
-    </div>
+    </EmptyState>
   );
 }
 

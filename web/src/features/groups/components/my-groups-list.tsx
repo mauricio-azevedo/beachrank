@@ -9,7 +9,7 @@ import { buildAuthPath } from '@/features/auth/auth-navigation';
 import { getAccessToken } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { getGroupInitials } from '@/features/groups/helpers/group-initials.helper';
+import { GroupAvatar } from '@/components/ui/group-avatar';
 
 type Props = {
   loadGroups?: () => Promise<MyGroup[]>;
@@ -91,9 +91,7 @@ function MyGroupCard({ membership, ratingLabel }: { membership: MyGroup; ratingL
       <Card className="br-pressable bg-gradient-to-br from-card via-card to-primary/8">
         <CardContent className="space-y-comfortable p-4">
           <div className="flex items-start gap-base">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1.35rem] bg-muted text-sm font-semibold text-foreground">
-              {getGroupInitials(group.name)}
-            </div>
+            <GroupAvatar name={group.name} groupId={group.id} size="md" />
 
             <div className="min-w-0 flex-1 space-y-tight">
               <div className="flex min-w-0 items-center gap-snug">

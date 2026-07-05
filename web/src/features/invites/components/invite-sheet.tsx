@@ -8,7 +8,7 @@ import { DrawerTitle } from '@/components/ui/drawer';
 import { MemberAvatar } from '@/components/ui/member-avatar';
 import { Meta, Overline } from '@/components/ui/text';
 import { createGroupInvite } from '@/features/invites/api/invites.api';
-import { getGroupInitials } from '@/features/groups/helpers/group-initials.helper';
+import { GroupAvatar } from '@/components/ui/group-avatar';
 import { getApiErrorCode } from '@/lib/api-error';
 import { getAccessToken } from '@/lib/auth';
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
@@ -75,9 +75,7 @@ export function InviteSheetContent({ groupId, groupName, guest }: InviteSheetCon
         {guest ? (
           <MemberAvatar userId={null} name={guest.name} avatarColor={null} size="md" />
         ) : (
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(150deg,var(--accent),var(--accent-dark))] text-base font-extrabold text-white shadow-button">
-            {getGroupInitials(groupName)}
-          </span>
+          <GroupAvatar name={groupName} groupId={groupId} size="md" tone="accent" />
         )}
         <div className="min-w-0 flex-1 text-left">
           <Overline size="xs">Convidar</Overline>

@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowDown, ArrowUp, ChevronRight, Loader2, Plus } from '
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatFeedItemTime } from '@/features/feed/helpers/feed-item-time.helper';
-import { getGroupInitials } from '@/features/groups/helpers/group-initials.helper';
+import { GroupAvatar } from '@/components/ui/group-avatar';
 import type { GroupHomeCard } from '@/features/groups/types/group-home.type';
 import {
   formatGroupsCount,
@@ -57,7 +57,7 @@ export function FeaturedGroupCard({ item }: { item: GroupHomeCard }) {
         >
           <div className="space-y-comfortable">
             <div className="flex items-start gap-base">
-              <GroupAvatar name={item.group.name} size="lg" />
+              <GroupAvatar name={item.group.name} groupId={item.group.id} size="lg" />
               <div className="min-w-0 flex-1 space-y-tight">
                 <h2 className="min-w-0 truncate text-lg font-semibold tracking-[-0.035em]">
                   {item.group.name}
@@ -106,7 +106,7 @@ export function CompactGroupCard({ item }: { item: GroupHomeCard }) {
       <Card className="br-pressable hover:bg-card/95">
         <CardContent className="space-y-base p-4">
           <div className="flex items-start gap-base">
-            <GroupAvatar name={item.group.name} />
+            <GroupAvatar name={item.group.name} groupId={item.group.id} size="md" />
             <div className="min-w-0 flex-1">
               <h2 className="min-w-0 truncate text-base font-semibold tracking-[-0.025em]">
                 {item.group.name}
@@ -148,7 +148,7 @@ export function DiscoveryGroupCard({ item }: { item: GroupHomeCard }) {
       <Card className="br-pressable hover:bg-card/95">
         <CardContent className="space-y-base p-4">
           <div className="flex items-start gap-base">
-            <GroupAvatar name={item.group.name} />
+            <GroupAvatar name={item.group.name} groupId={item.group.id} size="md" />
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-base font-semibold tracking-[-0.025em]">
                 {item.group.name}
@@ -226,19 +226,6 @@ function RatingText({
       <span className="font-semibold text-foreground">{Math.round(standing.rating)}</span>{' '}
       {standing.ratingSuffix}
     </p>
-  );
-}
-
-function GroupAvatar({ name, size = 'default' }: { name: string; size?: 'default' | 'lg' }) {
-  const className =
-    size === 'lg' ? 'h-14 w-14 rounded-[1.45rem] text-base' : 'h-11 w-11 rounded-[1.25rem] text-sm';
-
-  return (
-    <div
-      className={`flex shrink-0 items-center justify-center bg-muted font-semibold text-foreground ${className}`}
-    >
-      {getGroupInitials(name)}
-    </div>
   );
 }
 

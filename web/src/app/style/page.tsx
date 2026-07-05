@@ -1,10 +1,12 @@
 'use client';
 
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { GroupAvatar } from '@/components/ui/group-avatar';
 import { Input } from '@/components/ui/input';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -117,6 +119,40 @@ export default function StylePage() {
           <Swatch name="avatar-4" className="bg-avatar-4" />
           <Swatch name="ring-from" className="bg-ring-from" />
           <Swatch name="ring-to" className="bg-ring-to" />
+        </div>
+      </Block>
+
+      <Block label="Avatar de grupo">
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <GroupAvatar name="Masculino Life" groupId="demo-1" size="sm" />
+            <GroupAvatar name="Masculino Life" groupId="demo-1" size="md" />
+            <GroupAvatar name="Masculino Life" groupId="demo-1" size="lg" />
+            <GroupAvatar name="Masculino Life" groupId="demo-1" size="hero" />
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <GroupAvatar name="Quadra da Vila" groupId="demo-2" size="md" />
+            <GroupAvatar name="Beach Manés" groupId="demo-3" size="md" />
+            <GroupAvatar name="Masculino Life" size="md" tone="accent" />
+            <GroupAvatar name="Masculino Life" size="md" tone="brand" />
+          </div>
+        </div>
+      </Block>
+
+      <Block label="Empty state">
+        <div className="space-y-6">
+          <EmptyState
+            icon={<Users className="size-8 text-faint-foreground" strokeWidth={1.7} aria-hidden />}
+            title="Nenhum grupo ainda"
+            hint="Entre num grupo pra registrar partidas e acompanhar seu ranking."
+          />
+          <EmptyState
+            size="sm"
+            tone="dashed"
+            icon={<Plus className="size-6" aria-hidden />}
+            title="Digite um nome e toque +"
+            hint="Pode adicionar vários de uma vez."
+          />
         </div>
       </Block>
 

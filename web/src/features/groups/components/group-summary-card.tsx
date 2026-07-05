@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { ChevronRight, Search } from 'lucide-react';
 import type { Group, GroupMember, Match, MyGroup } from '@/types/api';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Body, Dot, Label, Meta, Stat, Title } from '@/components/ui/text';
 import { StandingCard } from '@/features/groups/components/standing-card';
+import { getGroupInitials } from '@/features/groups/helpers/group-initials.helper';
+import { TOUCH_TARGET_48 } from '@/lib/touch-target';
 
 export type GroupSummaryCardProps = {
   group: Group;
@@ -13,6 +15,10 @@ export type GroupSummaryCardProps = {
   members: GroupMember[];
   matches: Match[];
   membership: MyGroup | null;
+  // 0-match group: identity only — search and standing wait for the first match.
+  isEmpty: boolean;
+  onOpenMembers: () => void;
+  onOpenMatches: () => void;
 };
 
 export function GroupSummaryCard({
@@ -21,6 +27,9 @@ export function GroupSummaryCard({
   members,
   matches,
   membership,
+  isEmpty,
+  onOpenMembers,
+  onOpenMatches,
 }: GroupSummaryCardProps) {
   const currentRankIndex = membership
     ? ranking.findIndex((member) => member.id === membership.id)
@@ -28,8 +37,11 @@ export function GroupSummaryCard({
   const currentMember = membership
     ? (ranking[currentRankIndex] ?? members.find((member) => member.id === membership.id) ?? null)
     : null;
-  const memberCount = group._count?.members ?? members.length;
-  const matchCount = group._count?.matches ?? matches.length;
+  // Live lists, not `group._count`: the counts must agree with what the members
+  // drawer and the Partidas tab actually show (both exclude left members and
+  // soft-deleted matches; `_count` does not).
+  const memberCount = members.length;
+  const matchCount = matches.length;
   const currentRating = currentMember?.rating ?? membership?.rating ?? null;
 
   const standing =
@@ -42,27 +54,37 @@ export function GroupSummaryCard({
 
   return (
     <div className="space-y-5">
-      <GroupIdentityHeader group={group} memberCount={memberCount} matchCount={matchCount} />
+      <GroupIdentityHeader
+        group={group}
+        memberCount={memberCount}
+        matchCount={matchCount}
+        onOpenMembers={onOpenMembers}
+        onOpenMatches={onOpenMatches}
+      />
 
-      <GroupSearchField />
+      {!isEmpty && (
+        <>
+          <GroupSearchField />
 
-      {standing && currentRating !== null && (
-        <StandingCard
-          rank={standing.rank}
-          progress={standing.progress}
-          pointsToClimb={standing.pointsToClimb}
-          rating={currentRating}
-          lastChange={lastChange}
-          movement={
-            movement
-              ? {
-                  direction: movement.direction,
-                  positions: movement.positions,
-                  occurredAt: movement.occurredAt,
-                }
-              : null
-          }
-        />
+          {standing && currentRating !== null && (
+            <StandingCard
+              rank={standing.rank}
+              progress={standing.progress}
+              pointsToClimb={standing.pointsToClimb}
+              rating={currentRating}
+              lastChange={lastChange}
+              movement={
+                movement
+                  ? {
+                      direction: movement.direction,
+                      positions: movement.positions,
+                      occurredAt: movement.occurredAt,
+                    }
+                  : null
+              }
+            />
+          )}
+        </>
       )}
     </div>
   );
@@ -140,10 +162,14 @@ function GroupIdentityHeader({
   group,
   memberCount,
   matchCount,
+  onOpenMembers,
+  onOpenMatches,
 }: {
   group: Group;
   memberCount: number;
   matchCount: number;
+  onOpenMembers: () => void;
+  onOpenMatches: () => void;
 }) {
   return (
     <div className="flex flex-col items-center text-center">
@@ -157,19 +183,66 @@ function GroupIdentityHeader({
       <Title className="mt-base">{group.name}</Title>
 
       <Meta className="mt-snug flex items-center gap-snug text-muted-foreground">
-        <span className="flex items-center gap-tight">
-          <span className="text-foreground">{memberCount}</span>
-          {memberCount === 1 ? 'jogador' : 'jogadores'}
-        </span>
+        <IdentityStat
+          count={memberCount}
+          label={memberCount === 1 ? 'jogador' : 'jogadores'}
+          actionLabel="Ver jogadores"
+          onClick={onOpenMembers}
+          chevron
+        />
         <Dot className="mx-0" />
-        <span className="flex items-center gap-tight">
-          <span className="text-foreground">{matchCount}</span>
-          {matchCount === 1 ? 'partida' : 'partidas'}
-        </span>
+        <IdentityStat
+          count={matchCount}
+          label={matchCount === 1 ? 'partida' : 'partidas'}
+          actionLabel="Ver partidas"
+          onClick={onOpenMatches}
+        />
       </Meta>
 
       {group.description && <GroupDescription text={group.description} />}
     </div>
+  );
+}
+
+// A count in the identity line that doubles as the entry point to what it counts
+// ("N jogadores ›" opens the roster; "M partidas" jumps to the tab). Zero counts
+// stay plain text — nothing to see yet.
+function IdentityStat({
+  count,
+  label,
+  actionLabel,
+  onClick,
+  chevron = false,
+}: {
+  count: number;
+  label: string;
+  actionLabel: string;
+  onClick: () => void;
+  chevron?: boolean;
+}) {
+  const content = (
+    <>
+      <span className="text-foreground">{count}</span>
+      {label}
+    </>
+  );
+
+  if (count === 0) {
+    return <span className="flex items-center gap-tight">{content}</span>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={actionLabel}
+      className={`flex items-center gap-tight ${TOUCH_TARGET_48}`}
+    >
+      {content}
+      {chevron && (
+        <ChevronRight className="size-3 text-faint-foreground" strokeWidth={2.6} aria-hidden />
+      )}
+    </button>
   );
 }
 
@@ -214,18 +287,4 @@ function GroupSearchField() {
       />
     </InputGroup>
   );
-}
-
-function getGroupInitials(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-
-  if (words.length === 0) {
-    return '?';
-  }
-
-  if (words.length === 1) {
-    return words[0].slice(0, 2).toUpperCase();
-  }
-
-  return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
 }

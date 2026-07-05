@@ -19,30 +19,35 @@ built in) and `components/ui/drawer.tsx` (`DrawerActionHeader` — one header ac
   label / error tint / inline-alert / message treatment. (A `SheetTextarea` variant covers
   create-group's description.)
 - **Inconsistent error UX (5 styles).** Form-level `text-destructive` `<p>` (login, register,
-  create-group, `group-invite-client`, `invite-accept-client`) vs centered `text-danger` `<Meta>`
+  create-group, `invite-accept-client`) vs centered `text-danger` `<Meta>`
   (edit-profile, password, compose) vs `text-tag-warn` `<Meta>` (`claim-offer-client`,
-  `stub-claim-email-panel`, `picker-view`) vs the field-level treatment now in `SheetField`.
+  `picker-view`) vs the field-level treatment now in `SheetField`.
   Standardize: field-level where the error maps to a field; one danger form-level fallback
   otherwise. `text-tag-warn` is for warnings, not errors.
 - **Missing loading / error / empty states.** `features/members/member-profile-drawer.tsx` and
-  `features/claim-offers/components/claim-offer-client.tsx` show bare error text with no retry;
-  `features/groups/components/group-invite-client.tsx` lacks an initial token-loaded guard. Compare
-  the complete pattern in `features/groups/components/my-groups-list.tsx` (skeleton + error card +
-  empty state).
+  `features/claim-offers/components/claim-offer-client.tsx` show bare error text with no retry.
+  Compare the complete pattern in `features/groups/components/my-groups-list.tsx` (skeleton +
+  error card + empty state).
 
 ## Medium — duplicated logic / divergent treatment
 
-- **Duplicated submit/loading/error machine (~7 forms).** The same `useState` error + `isSubmitting`
+- **Duplicated submit/loading/error machine (~6 forms).** The same `useState` error + `isSubmitting`
   - try/catch/finally lives in login, register, create-group, edit-profile, password,
-    `claim-offer-client`, `stub-claim-email-panel`. Extract a `useFormSubmit` hook.
+    `claim-offer-client`. Extract a `useFormSubmit` hook.
 - **Duplicated auth/token plumbing.** `getAccessToken()` → call → `setAccessToken(result.accessToken)`
   is copy-pasted across the same forms; fold into the submit hook or a small wrapper.
 - **Two friendly-error mappers.** `friendlyError` (edit-profile-view) and `getFriendlyPasswordError`
   (password-view) parse backend messages separately — consolidate into one mapper (API layer).
-- **Missing busy states.** e.g. `stub-claim-email-panel`'s "Remover email" button gives no spinner/
-  busy feedback while saving, unlike its sibling "Enviar convite".
 - **Real-time field guidance is one-off.** `password-view`'s `PasswordGuidance` (live, colored) is
   the good pattern; auth/create-group only validate on submit.
+- **Info/warn explainer row duplicated.** The `Info` icon + `Meta` row exists boxed/warn in
+  `member-profile-drawer.tsx` and bare/muted in `invite-sheet.tsx` (back-to-back in the same flow);
+  at the next touch, extract an `InfoRow` with tone + boxed/plain variants.
+- **Group-detail tab state is triple-tracked.** `activeTab` (URL prop) + `selectedTab` +
+  `syncedTab` mirror in `group-detail.tsx`; collapses to `pendingTab ?? activeTab` with a
+  render-time clear.
+- **`AddGuestsView` prop-drills 9 values** (`group-members-drawer.tsx`) for a single call site;
+  inline it back into the view machine or pass one flow object when next touched.
 
 ## Low — cosmetic / premature to share
 
@@ -52,3 +57,8 @@ built in) and `components/ui/drawer.tsx` (`DrawerActionHeader` — one header ac
   second use appears.
 - **Custom action buttons** (logout row, pill form buttons) use bespoke classes rather than
   `<Button>`; revisit if a `danger` button variant is added.
+- **Off-ladder gaps in the invite surfaces.** `gap-2.5` (`invite-sheet.tsx` explainer/link rows)
+  and `gap-3.5` (`group-members-drawer.tsx` ChooserOption) sit outside the spacing ladder
+  (frontend-conventions §9); move to `gap-snug`/`gap-base` on the next pass over these files.
+- **`isEmpty` prop on `GroupSummaryCard` is derivable** from the `matches` prop it already
+  receives; derive inside the card to keep one source of truth.

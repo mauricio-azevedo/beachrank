@@ -96,7 +96,57 @@ export class GroupInvitesService {
     }
 
     const token = randomBytes(24).toString('hex');
+    const targetGroupMemberId = body.targetGroupMemberId ?? null;
 
+    // A plain request (no expiry, no usage cap) reuses the active invite for the same
+    // target instead of minting a new one: the link stays stable across sheet opens and
+    // across admins, and rows don't pile up. Explicit options always mint a fresh invite.
+    // An advisory lock serializes concurrent plain creates per (group, target), so
+    // simultaneous requests converge on one row instead of racing past the lookup.
+    if (body.maxUses === undefined && !body.expiresAt) {
+      const lockKey = `invite:${groupId}:${targetGroupMemberId ?? ''}`;
+
+      const invite = await this.prisma.$transaction(async (tx) => {
+        // $executeRaw: the lock function returns `void`, which $queryRaw can't deserialize.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+
+        const existing = await tx.groupInvite.findFirst({
+          where: {
+            groupId,
+            targetGroupMemberId,
+            revokedAt: null,
+            expiresAt: null,
+            maxUses: null,
+          },
+          // id breaks createdAt ties (legacy data may hold several plain invites),
+          // so "the newest" is deterministic and the shared link never flaps.
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        });
+
+        if (existing) {
+          return existing;
+        }
+
+        return tx.groupInvite.create({
+          data: {
+            groupId,
+            createdById: body.createdById,
+            token,
+            maxUses: null,
+            expiresAt: null,
+            targetGroupMemberId,
+          },
+        });
+      });
+
+      return {
+        ...invite,
+        path: `/invites/${invite.token}`,
+      };
+    }
+
+    // Bare row on purpose: the sheet reads only `path`, and echoing relations here
+    // would ship the (possibly other) creator's account data as dead payload.
     const invite = await this.prisma.groupInvite.create({
       data: {
         groupId,
@@ -104,17 +154,7 @@ export class GroupInvitesService {
         token,
         maxUses: body.maxUses ?? null,
         expiresAt,
-        targetGroupMemberId: body.targetGroupMemberId ?? null,
-      },
-      include: {
-        group: true,
-        createdBy: {
-          select: {
-            id: true,
-            ...MEMBER_USER_SELECT,
-            email: true,
-          },
-        },
+        targetGroupMemberId,
       },
     });
 

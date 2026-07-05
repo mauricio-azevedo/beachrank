@@ -51,7 +51,6 @@ re-render.
 - `/groups/new` requires login.
 - `/groups/:groupId/matches/new` requires group membership.
 - `/groups/:groupId/matches/:matchId/edit` requires group membership.
-- `/groups/:groupId/invite` requires admin role.
 - `/login` and `/register` are the auth screen (also the deep-link target for invite
   emails); an already-signed-in visitor is bounced to their redirect target or home.
 - A tokenless visitor to a protected route is sent to `/login?redirect=…`, and lands
@@ -70,7 +69,14 @@ re-render.
 
 ### Group detail
 
-- Group detail page loads header, description, actions, tabs, ranking, matches, and members.
+- Group detail page loads header, description, actions, tabs, ranking, and matches.
+- The "N jogadores" identity stat opens the players sheet; "M partidas" jumps to the
+  Partidas tab.
+- A 0-match group shows the empty hero ("Nenhuma partida ainda" + Registrar partida +
+  players button) instead of search, standing, and tabs — and recovers the full layout
+  after the first match is registered.
+- Players sheet shows "Só você por aqui" when the viewer is the group's only member;
+  a visitor viewing a one-person group sees the normal list.
 - Opening group from list/profile does not leave user stuck on the previous screen.
 - Route-level skeleton appears while group detail data loads.
 - Back button is real and usable while group detail content loads.
@@ -80,19 +86,24 @@ re-render.
 
 - Ranking tab switches instantly.
 - Matches tab switches instantly.
-- Members tab switches instantly.
 - URL reflects non-default tabs.
 - Refresh on non-default tab restores the expected tab.
 - Switching tabs should not trigger unnecessary server navigation when data is already loaded.
 
 ## Invites
 
-- Admin can open invite screen.
-- Non-admin cannot access invite screen.
-- Signed-out user is redirected appropriately.
-- Generated invite can be accepted by another user.
+- Admin's `+` in the players sheet opens the chooser (Adicionar manualmente · Convidar
+  pro grupo); a non-admin member's `+` goes straight to adding guests.
+- "Convidar pro grupo" opens the group invite sheet (QR + copiable link); reopening it
+  yields the same link (active invite is reused).
+- A guest's row pill and a guest's profile "Convidar" (admin-only) open that guest's
+  closed invite sheet.
+- Non-members see no `+`, no invite pills, and no invite entry anywhere.
+- Generated invite can be accepted by another user (open → roster self-identify;
+  closed → straight to that guest's recognition).
 - Invite usage count updates correctly.
-- Invite screens show a real back button while content loads.
+- Invite sheet failure shows an in-sheet error with retry; a guest who already claimed
+  shows the "já tem uma conta" message instead of a link.
 - Revoked/expired/maxed invite behavior is handled if applicable.
 
 ## Matches

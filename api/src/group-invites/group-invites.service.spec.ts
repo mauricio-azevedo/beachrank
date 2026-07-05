@@ -1,0 +1,166 @@
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { GroupInvitesService } from './group-invites.service';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { FeedOrchestratorService } from '../feed/feed-orchestrator.service';
+import type { GroupHomeSummaryService } from '../groups/group-home-summary.service';
+import type { ClaimService } from '../claims/claim.service';
+import type { NotificationWriterService } from '../notifications/notification-writer.service';
+
+type TxMock = {
+  $executeRaw: jest.Mock;
+  groupInvite: { findFirst: jest.Mock; create: jest.Mock };
+};
+
+type PrismaMock = {
+  group: { findUnique: jest.Mock };
+  groupMember: { findUnique: jest.Mock };
+  groupInvite: { create: jest.Mock };
+  $transaction: jest.Mock;
+};
+
+function buildService() {
+  // Plain creates run inside a transaction (advisory lock + find-or-create).
+  const tx: TxMock = {
+    $executeRaw: jest.fn().mockResolvedValue(1),
+    groupInvite: { findFirst: jest.fn(), create: jest.fn() },
+  };
+  const prisma: PrismaMock = {
+    group: { findUnique: jest.fn() },
+    groupMember: { findUnique: jest.fn() },
+    groupInvite: { create: jest.fn() },
+    $transaction: jest.fn(async (fn: (tx: TxMock) => unknown) => fn(tx)),
+  };
+  const service = new GroupInvitesService(
+    prisma as unknown as PrismaService,
+    {} as FeedOrchestratorService,
+    {} as GroupHomeSummaryService,
+    {} as ClaimService,
+    {} as NotificationWriterService,
+  );
+  return { service, prisma, tx };
+}
+
+const GROUP_ID = 'group-1';
+const ADMIN_ID = 'user-1';
+
+function mockAdminRequester(prisma: PrismaMock) {
+  prisma.group.findUnique.mockResolvedValue({ id: GROUP_ID });
+  prisma.groupMember.findUnique.mockResolvedValueOnce({
+    id: 'member-1',
+    role: 'ADMIN',
+    leftAt: null,
+  });
+}
+
+describe('GroupInvitesService.create', () => {
+  it('reuses the active open invite when no options are passed', async () => {
+    const { service, prisma, tx } = buildService();
+    mockAdminRequester(prisma);
+    tx.groupInvite.findFirst.mockResolvedValue({ id: 'inv-1', token: 'tok-1' });
+
+    const result = await service.create(GROUP_ID, { createdById: ADMIN_ID });
+
+    expect(tx.groupInvite.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          groupId: GROUP_ID,
+          targetGroupMemberId: null,
+          revokedAt: null,
+          expiresAt: null,
+          maxUses: null,
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      }),
+    );
+    expect(tx.groupInvite.create).not.toHaveBeenCalled();
+    expect(result.path).toBe('/invites/tok-1');
+  });
+
+  it('mints a new invite when there is none to reuse', async () => {
+    const { service, prisma, tx } = buildService();
+    mockAdminRequester(prisma);
+    tx.groupInvite.findFirst.mockResolvedValue(null);
+    tx.groupInvite.create.mockImplementation(({ data }) =>
+      Promise.resolve({ id: 'inv-2', ...data }),
+    );
+
+    const result = await service.create(GROUP_ID, { createdById: ADMIN_ID });
+
+    expect(tx.groupInvite.create).toHaveBeenCalledTimes(1);
+    expect(result.path).toBe(`/invites/${result.token}`);
+  });
+
+  it('always mints (outside the reuse path) when explicit options are passed', async () => {
+    const { service, prisma } = buildService();
+    mockAdminRequester(prisma);
+    prisma.groupInvite.create.mockImplementation(({ data }) =>
+      Promise.resolve({ id: 'inv-3', ...data }),
+    );
+
+    await service.create(GROUP_ID, { createdById: ADMIN_ID, maxUses: 5 });
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(prisma.groupInvite.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ maxUses: 5 }),
+      }),
+    );
+  });
+
+  it('reuses per target: a closed invite only matches the same guest', async () => {
+    const { service, prisma, tx } = buildService();
+    mockAdminRequester(prisma);
+    // target guest lookup: unclaimed, still in the group
+    prisma.groupMember.findUnique.mockResolvedValueOnce({
+      userId: null,
+      leftAt: null,
+    });
+    tx.groupInvite.findFirst.mockResolvedValue({ id: 'inv-4', token: 'tok-4' });
+
+    const result = await service.create(GROUP_ID, {
+      createdById: ADMIN_ID,
+      targetGroupMemberId: 'guest-1',
+    });
+
+    expect(tx.groupInvite.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ targetGroupMemberId: 'guest-1' }),
+      }),
+    );
+    expect(result.path).toBe('/invites/tok-4');
+  });
+
+  it('forbids non-admin members from creating invites', async () => {
+    const { service, prisma, tx } = buildService();
+    prisma.group.findUnique.mockResolvedValue({ id: GROUP_ID });
+    prisma.groupMember.findUnique.mockResolvedValueOnce({
+      id: 'member-2',
+      role: 'MEMBER',
+      leftAt: null,
+    });
+
+    await expect(
+      service.create(GROUP_ID, { createdById: ADMIN_ID }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(tx.groupInvite.create).not.toHaveBeenCalled();
+    expect(prisma.groupInvite.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a closed invite whose target already has an account', async () => {
+    const { service, prisma, tx } = buildService();
+    mockAdminRequester(prisma);
+    prisma.groupMember.findUnique.mockResolvedValueOnce({
+      userId: 'user-9',
+      leftAt: null,
+    });
+
+    await expect(
+      service.create(GROUP_ID, {
+        createdById: ADMIN_ID,
+        targetGroupMemberId: 'guest-1',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(tx.groupInvite.create).not.toHaveBeenCalled();
+  });
+});

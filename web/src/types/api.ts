@@ -73,6 +73,17 @@ export type MyGroup = {
   group: Group;
 };
 
+// Machine-readable business error codes (mirrors api/src/common/api-errors.ts —
+// append-only). Carried on ApiError (`lib/api-error`); UI branches on these, never
+// on the message copy.
+export type ApiErrorCode =
+  | 'GUEST_ALREADY_CLAIMED'
+  | 'EMAIL_IN_USE'
+  | 'INVALID_CURRENT_PASSWORD'
+  | 'PASSWORD_SAME_AS_CURRENT'
+  | 'PASSWORD_TOO_SHORT'
+  | 'PASSWORD_TOO_LONG';
+
 // A lightweight roster row on the open invite: just enough to self-recognize.
 export type InviteGuest = {
   groupMemberId: string;

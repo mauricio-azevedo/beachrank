@@ -1,7 +1,7 @@
+import { API_ERROR_CODES, codedConflict } from '../common/api-errors';
 import { MEMBER_USER_SELECT } from '../common/member-display-name';
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -54,7 +54,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Email already in use');
+      throw codedConflict(API_ERROR_CODES.EMAIL_IN_USE, 'Email already in use');
     }
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);

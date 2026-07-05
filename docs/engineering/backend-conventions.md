@@ -45,6 +45,14 @@ create(@Param('groupId') groupId: string, @CurrentUser() user: AuthUser,
 - **Validation is imperative** (no `class-validator`, no global `ValidationPipe`).
   Throw Nest HTTP exceptions: `BadRequestException`, `NotFoundException`,
   `ForbiddenException`, `ConflictException`, `UnauthorizedException`.
+- **Machine-readable error codes** (`common/api-errors.ts`): when the frontend must
+  react to a _specific_ business failure (not just show the message), throw via the
+  coded factories — `codedBadRequest(code, message)` / `codedConflict` /
+  `codedUnauthorized`. They stamp the full body `{ statusCode, error, code, message }`
+  (Nest passes object bodies through verbatim, so the factories carry the standard
+  fields themselves). The `API_ERROR_CODES` registry is **append-only** — the web app
+  mirrors it by hand in `web/src/types/api.ts` and branches on `code`, never on copy.
+  Plain string exceptions remain the default everywhere else.
 - Multi-write workflows run in `this.prisma.$transaction(async (tx) => …)`.
   Services accept an optional `tx` (`Prisma.TransactionClient | PrismaService`,
   often aliased `PrismaClientLike`) so they compose inside an outer transaction.

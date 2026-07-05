@@ -1,4 +1,6 @@
+import { ApiError } from '@/lib/api-error';
 import { isAccessTokenExpired, triggerSessionExpired } from '@/lib/auth';
+import type { ApiErrorCode } from '@/types/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
 
@@ -15,7 +17,7 @@ export async function apiRequest<T>(
   // re-login flow.
   if (token && isAccessTokenExpired(token)) {
     triggerSessionExpired();
-    throw new Error('Session expired');
+    throw new ApiError('Session expired', { status: 401, code: null });
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -37,26 +39,31 @@ export async function apiRequest<T>(
       triggerSessionExpired();
     }
 
-    throw new Error(await getErrorMessage(response));
+    throw await buildApiError(response);
   }
 
   return response.json();
 }
 
-async function getErrorMessage(response: Response) {
+async function buildApiError(response: Response) {
+  let message = `Request failed with status ${response.status}`;
+  let code: ApiErrorCode | null = null;
+
   try {
     const data = await response.json();
 
     if (typeof data?.message === 'string') {
-      return data.message;
+      message = data.message;
+    } else if (Array.isArray(data?.message)) {
+      message = data.message.join(', ');
     }
 
-    if (Array.isArray(data?.message)) {
-      return data.message.join(', ');
+    if (typeof data?.code === 'string') {
+      code = data.code as ApiErrorCode;
     }
   } catch {
-    // Ignore JSON parse error and fall back to default message.
+    // Ignore JSON parse error and fall back to the default message (code stays null).
   }
 
-  return `Request failed with status ${response.status}`;
+  return new ApiError(message, { status: response.status, code });
 }

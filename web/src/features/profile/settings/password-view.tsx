@@ -7,6 +7,7 @@ import { SheetPasswordField } from '@/components/ui/sheet-field';
 import { useToast } from '@/components/ui/toast';
 import { Meta } from '@/components/ui/text';
 import { apiRequest } from '@/lib/api-client';
+import { apiErrorMessage, getApiErrorCode, getApiErrorStatus } from '@/lib/api-error';
 import { setAccessToken } from '@/lib/auth';
 
 const MIN_PASSWORD_LENGTH = 6;
@@ -73,8 +74,7 @@ export function PasswordView({ token, onBack }: { token: string; onBack: () => v
       setConfirmPassword('');
       showToast('Senha alterada');
     } catch (caughtError) {
-      const message = caughtError instanceof Error ? caughtError.message : '';
-      if (/invalid current password/i.test(message)) {
+      if (getApiErrorCode(caughtError) === 'INVALID_CURRENT_PASSWORD') {
         setCurrentPasswordError('Senha atual incorreta. Tente novamente.');
       } else {
         setError(getFriendlyPasswordError(caughtError));
@@ -182,19 +182,16 @@ function getUtf8ByteLength(value: string) {
 }
 
 function getFriendlyPasswordError(caughtError: unknown) {
-  const message = caughtError instanceof Error ? caughtError.message : '';
+  // A coded 401 (wrong current password) is handled field-level by the caller; any
+  // other 401 here is the guard rejecting the token — session copy.
+  const fallback =
+    getApiErrorStatus(caughtError) === 401
+      ? 'Sua sessão expirou. Entre novamente para continuar.'
+      : 'Não foi possível alterar sua senha agora.';
 
-  if (/different from current password/i.test(message)) {
-    return 'A nova senha precisa ser diferente da senha atual.';
-  }
-  if (/at least 6 characters/i.test(message)) {
-    return 'A nova senha precisa ter pelo menos 6 caracteres.';
-  }
-  if (/at most 72 bytes/i.test(message)) {
-    return 'A nova senha está longa demais.';
-  }
-  if (/missing token|invalid token/i.test(message)) {
-    return 'Sua sessão expirou. Entre novamente para continuar.';
-  }
-  return 'Não foi possível alterar sua senha agora.';
+  return apiErrorMessage(caughtError, fallback, {
+    PASSWORD_SAME_AS_CURRENT: 'A nova senha precisa ser diferente da senha atual.',
+    PASSWORD_TOO_SHORT: 'A nova senha precisa ter pelo menos 6 caracteres.',
+    PASSWORD_TOO_LONG: 'A nova senha está longa demais.',
+  });
 }

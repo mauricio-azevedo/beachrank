@@ -7,10 +7,10 @@ import { Meta } from '@/components/ui/text';
 import { register } from '@/features/auth/auth.api';
 import {
   AUTH_EMAIL_REGEX,
-  friendlySignupError,
   MAX_NICKNAME_LENGTH,
   MIN_PASSWORD_LENGTH,
 } from '@/features/auth/auth-validation';
+import { apiErrorMessage } from '@/lib/api-error';
 import { setAccessToken } from '@/lib/auth';
 
 // The signup form: field card + primary CTA + switch-to-login link. Apelido is
@@ -60,7 +60,12 @@ export function SignupForm({
       setAccessToken(result.accessToken);
       onAuthenticated();
     } catch (caughtError) {
-      setError(friendlySignupError(caughtError));
+      setError(
+        apiErrorMessage(
+          caughtError,
+          'Não foi possível criar sua conta. Verifique os dados e tente de novo.',
+        ),
+      );
       setIsSubmitting(false);
     }
   }

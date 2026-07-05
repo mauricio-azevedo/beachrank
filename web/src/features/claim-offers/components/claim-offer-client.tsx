@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Body, Meta, Title } from '@/components/ui/text';
+import { apiErrorMessage } from '@/lib/api-error';
 import { nameInitial } from '@/lib/avatar';
 import { getAccessToken } from '@/lib/auth';
 import type { ClaimAdmin, ClaimMembership, ClaimOfferDetail, SharedMatch } from '@/types/api';
@@ -76,11 +77,7 @@ export function ClaimOfferClient({ stubId }: Props) {
         });
       }
     } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : 'Não foi possível assumir agora. Tente novamente.',
-      );
+      setError(apiErrorMessage(caught, 'Não foi possível assumir agora. Tente novamente.'));
       setBusy(null);
     }
   }

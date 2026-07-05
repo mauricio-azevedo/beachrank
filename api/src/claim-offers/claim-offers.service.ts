@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { API_ERROR_CODES, codedBadRequest } from '../common/api-errors';
 import { Prisma } from '../generated/prisma/client';
 import {
   ClaimEmailStatus,
@@ -66,7 +67,10 @@ export class ClaimOffersService {
       throw new NotFoundException('Perfil não encontrado');
     }
     if (stub.userId !== null) {
-      throw new BadRequestException('Esse perfil já tem uma conta.');
+      throw codedBadRequest(
+        API_ERROR_CODES.GUEST_ALREADY_CLAIMED,
+        'Esse perfil já tem uma conta.',
+      );
     }
 
     // The account this email points at (if any) and the "one email per stub" clash are

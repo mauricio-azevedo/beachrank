@@ -146,7 +146,7 @@ describe('GroupInvitesService.create', () => {
     expect(prisma.groupInvite.create).not.toHaveBeenCalled();
   });
 
-  it('rejects a closed invite whose target already has an account', async () => {
+  it('rejects a closed invite whose target already has an account, with a stable code', async () => {
     const { service, prisma, tx } = buildService();
     mockAdminRequester(prisma);
     prisma.groupMember.findUnique.mockResolvedValueOnce({
@@ -154,12 +154,20 @@ describe('GroupInvitesService.create', () => {
       leftAt: null,
     });
 
-    await expect(
-      service.create(GROUP_ID, {
+    const rejection = await service
+      .create(GROUP_ID, {
         createdById: ADMIN_ID,
         targetGroupMemberId: 'guest-1',
-      }),
-    ).rejects.toBeInstanceOf(BadRequestException);
+      })
+      .then(() => null)
+      .catch((error: unknown) => error);
+
+    expect(rejection).toBeInstanceOf(BadRequestException);
+    // The frontend branches on this code (terminal state, no retry) — copy may change,
+    // the code may not.
+    expect((rejection as BadRequestException).getResponse()).toMatchObject({
+      code: 'GUEST_ALREADY_CLAIMED',
+    });
     expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(tx.groupInvite.create).not.toHaveBeenCalled();
   });

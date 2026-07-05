@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Check } from 'lucide-react';
+import { apiErrorMessage } from '@/lib/api-error';
 import { AVATAR_COLORS } from '@/lib/avatar-color';
 import { setAccessToken } from '@/lib/auth';
 import { MemberAvatar } from '@/components/ui/member-avatar';
@@ -102,7 +103,7 @@ export function EditProfileView({
       });
       showToast('Perfil atualizado');
     } catch (caughtError) {
-      setError(friendlyError(caughtError));
+      setError(apiErrorMessage(caughtError, 'Não foi possível salvar. Tente novamente.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -209,12 +210,4 @@ export function EditProfileView({
       </DrawerFooter>
     </div>
   );
-}
-
-function friendlyError(error: unknown): string {
-  const message = error instanceof Error ? error.message.toLowerCase() : '';
-  if (message.includes('email') && message.includes('use')) {
-    return 'Esse email já está em uso.';
-  }
-  return 'Não foi possível salvar. Tente novamente.';
 }

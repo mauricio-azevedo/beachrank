@@ -4,6 +4,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import {
+  API_ERROR_CODES,
+  codedBadRequest,
+  codedUnauthorized,
+} from '../common/api-errors';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { UpdatePasswordInput } from './types/update-password-input.type';
@@ -43,7 +48,10 @@ export class MePasswordService {
     );
 
     if (!currentPasswordMatches) {
-      throw new UnauthorizedException('Invalid current password');
+      throw codedUnauthorized(
+        API_ERROR_CODES.INVALID_CURRENT_PASSWORD,
+        'Invalid current password',
+      );
     }
 
     const isSamePassword = await bcrypt.compare(
@@ -52,7 +60,8 @@ export class MePasswordService {
     );
 
     if (isSamePassword) {
-      throw new BadRequestException(
+      throw codedBadRequest(
+        API_ERROR_CODES.PASSWORD_SAME_AS_CURRENT,
         'New password must be different from current password',
       );
     }
@@ -122,13 +131,15 @@ export class MePasswordService {
     }
 
     if (value.length < MIN_PASSWORD_LENGTH) {
-      throw new BadRequestException(
+      throw codedBadRequest(
+        API_ERROR_CODES.PASSWORD_TOO_SHORT,
         `New password must have at least ${MIN_PASSWORD_LENGTH} characters`,
       );
     }
 
     if (Buffer.byteLength(value, 'utf8') > MAX_PASSWORD_BYTES) {
-      throw new BadRequestException(
+      throw codedBadRequest(
+        API_ERROR_CODES.PASSWORD_TOO_LONG,
         `New password must have at most ${MAX_PASSWORD_BYTES} bytes`,
       );
     }

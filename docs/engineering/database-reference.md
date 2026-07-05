@@ -83,7 +83,11 @@ Open (no target ⇒ the group's roster self-identify link) or closed (target ⇒
 deep-links to its recognition). Joining (`/invites/:token/accept`) and taking over a guest
 (`/invites/:token/claim/:guestId`) both go through `/invites/:token`. The email-anchored
 claim still coexists. Indexes: `[groupId]`, `[createdById]`, `[token]`,
-`[targetGroupMemberId]`.
+`[targetGroupMemberId]`. Partial unique index `GroupInvite_active_plain_key` on
+`(groupId, COALESCE(targetGroupMemberId, ''))` `WHERE revokedAt IS NULL AND expiresAt IS NULL
+AND maxUses IS NULL` enforces "one active plain invite per (group, target)" in the schema, so
+`create()` reuses via an optimistic read with no lock. Raw-SQL only (Prisma can't express
+partial/expression indexes in PSL); migration `20260705000000_group_invite_active_plain_unique`.
 
 ### GroupMember
 
@@ -279,6 +283,7 @@ present). Chronological highlights — each row tells you when a capability land
 | `20260623194946_add_group_member_partner_stats`         | `GroupMemberPartnerStats` (per-teammate read model)                           |
 | `20260623035814_retire_claim_links_and_requests`        | drop `ClaimRequest`/`ClaimRequestStatus` + GroupInvite CLAIM columns          |
 | `20260627120000_add_guest_invite_target_and_takeover`   | `GroupInvite.targetGroupMemberId` (open/closed) + `GUEST_TAKEN_OVER` enum val |
+| `20260705000000_group_invite_active_plain_unique`       | dedupe + partial unique index for one active plain invite per (group, target) |
 
 When changing the schema: edit `schema.prisma` → `npx prisma migrate dev` →
 `npx prisma generate` → confirm the backend compiles → update this doc,

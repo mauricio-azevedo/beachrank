@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import type { Prisma } from '../generated/prisma/client';
+import { Prisma } from '../generated/prisma/client';
 import { GroupMemberRole, NotificationType } from '../generated/prisma/enums';
 import { API_ERROR_CODES, codedBadRequest } from '../common/api-errors';
 import {
@@ -99,54 +99,72 @@ export class GroupInvitesService {
       throw new BadRequestException('maxUses must be greater than zero');
     }
 
-    const token = randomBytes(24).toString('hex');
     const targetGroupMemberId = body.targetGroupMemberId ?? null;
 
     // A plain request (no expiry, no usage cap) reuses the active invite for the same
     // target instead of minting a new one: the link stays stable across sheet opens and
     // across admins, and rows don't pile up. Explicit options always mint a fresh invite.
-    // An advisory lock serializes concurrent plain creates per (group, target), so
-    // simultaneous requests converge on one row instead of racing past the lookup.
+    // A partial unique index on (groupId, coalesce(target,'')) enforces one active plain
+    // row per slot in the schema, so no lock is needed: an optimistic read serves the hot
+    // reuse path in one query, and concurrent mints race on the INSERT — the loser catches
+    // the unique violation and re-reads the winner, so both converge on one link.
     if (body.maxUses === undefined && !body.expiresAt) {
-      const lockKey = `invite:${groupId}:${targetGroupMemberId ?? ''}`;
+      const activePlainWhere: Prisma.GroupInviteWhereInput = {
+        groupId,
+        targetGroupMemberId,
+        revokedAt: null,
+        expiresAt: null,
+        maxUses: null,
+      };
+      // id breaks createdAt ties (legacy data may hold several plain invites), so "the
+      // newest" is deterministic and the shared link never flaps.
+      const activePlainOrder: Prisma.GroupInviteOrderByWithRelationInput[] = [
+        { createdAt: 'desc' },
+        { id: 'desc' },
+      ];
 
-      const invite = await this.prisma.$transaction(async (tx) => {
-        // $executeRaw: the lock function returns `void`, which $queryRaw can't deserialize.
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+      const existing = await this.prisma.groupInvite.findFirst({
+        where: activePlainWhere,
+        orderBy: activePlainOrder,
+      });
 
-        const existing = await tx.groupInvite.findFirst({
-          where: {
-            groupId,
-            targetGroupMemberId,
-            revokedAt: null,
-            expiresAt: null,
-            maxUses: null,
-          },
-          // id breaks createdAt ties (legacy data may hold several plain invites),
-          // so "the newest" is deterministic and the shared link never flaps.
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        });
+      if (existing) {
+        return { ...existing, path: `/invites/${existing.token}` };
+      }
 
-        if (existing) {
-          return existing;
-        }
-
-        return tx.groupInvite.create({
+      // Mint only on a real miss — the token isn't generated for the reuse hot path.
+      try {
+        const created = await this.prisma.groupInvite.create({
           data: {
             groupId,
             createdById: body.createdById,
-            token,
+            token: randomBytes(24).toString('hex'),
             maxUses: null,
             expiresAt: null,
             targetGroupMemberId,
           },
         });
-      });
 
-      return {
-        ...invite,
-        path: `/invites/${invite.token}`,
-      };
+        return { ...created, path: `/invites/${created.token}` };
+      } catch (error) {
+        // A concurrent plain mint won the race and the partial unique index rejected ours —
+        // re-read and hand back the winner so both callers share one stable link.
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          const winner = await this.prisma.groupInvite.findFirst({
+            where: activePlainWhere,
+            orderBy: activePlainOrder,
+          });
+
+          if (winner) {
+            return { ...winner, path: `/invites/${winner.token}` };
+          }
+        }
+
+        throw error;
+      }
     }
 
     // Bare row on purpose: the sheet reads only `path`, and echoing relations here
@@ -155,7 +173,7 @@ export class GroupInvitesService {
       data: {
         groupId,
         createdById: body.createdById,
-        token,
+        token: randomBytes(24).toString('hex'),
         maxUses: body.maxUses ?? null,
         expiresAt,
         targetGroupMemberId,

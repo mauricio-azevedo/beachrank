@@ -1,34 +1,32 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { GroupInvitesService } from './group-invites.service';
+import { Prisma } from '../generated/prisma/client';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { FeedOrchestratorService } from '../feed/feed-orchestrator.service';
 import type { GroupHomeSummaryService } from '../groups/group-home-summary.service';
 import type { ClaimService } from '../claims/claim.service';
 import type { NotificationWriterService } from '../notifications/notification-writer.service';
 
-type TxMock = {
-  $executeRaw: jest.Mock;
-  groupInvite: { findFirst: jest.Mock; create: jest.Mock };
-};
-
 type PrismaMock = {
   group: { findUnique: jest.Mock };
   groupMember: { findUnique: jest.Mock };
-  groupInvite: { create: jest.Mock };
-  $transaction: jest.Mock;
+  groupInvite: { findFirst: jest.Mock; create: jest.Mock };
 };
 
+// The partial unique index throws this on a lost plain-mint race.
+function uniqueViolation() {
+  return new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+    code: 'P2002',
+    clientVersion: 'test',
+  });
+}
+
 function buildService() {
-  // Plain creates run inside a transaction (advisory lock + find-or-create).
-  const tx: TxMock = {
-    $executeRaw: jest.fn().mockResolvedValue(1),
-    groupInvite: { findFirst: jest.fn(), create: jest.fn() },
-  };
+  // Plain creates read optimistically then INSERT — no transaction, no advisory lock.
   const prisma: PrismaMock = {
     group: { findUnique: jest.fn() },
     groupMember: { findUnique: jest.fn() },
-    groupInvite: { create: jest.fn() },
-    $transaction: jest.fn(async (fn: (tx: TxMock) => unknown) => fn(tx)),
+    groupInvite: { findFirst: jest.fn(), create: jest.fn() },
   };
   const service = new GroupInvitesService(
     prisma as unknown as PrismaService,
@@ -37,7 +35,7 @@ function buildService() {
     {} as ClaimService,
     {} as NotificationWriterService,
   );
-  return { service, prisma, tx };
+  return { service, prisma };
 }
 
 const GROUP_ID = 'group-1';
@@ -54,13 +52,16 @@ function mockAdminRequester(prisma: PrismaMock) {
 
 describe('GroupInvitesService.create', () => {
   it('reuses the active open invite when no options are passed', async () => {
-    const { service, prisma, tx } = buildService();
+    const { service, prisma } = buildService();
     mockAdminRequester(prisma);
-    tx.groupInvite.findFirst.mockResolvedValue({ id: 'inv-1', token: 'tok-1' });
+    prisma.groupInvite.findFirst.mockResolvedValue({
+      id: 'inv-1',
+      token: 'tok-1',
+    });
 
     const result = await service.create(GROUP_ID, { createdById: ADMIN_ID });
 
-    expect(tx.groupInvite.findFirst).toHaveBeenCalledWith(
+    expect(prisma.groupInvite.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
           groupId: GROUP_ID,
@@ -72,21 +73,22 @@ describe('GroupInvitesService.create', () => {
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       }),
     );
-    expect(tx.groupInvite.create).not.toHaveBeenCalled();
+    // Hot path: reuse serves from a single read, no mint.
+    expect(prisma.groupInvite.create).not.toHaveBeenCalled();
     expect(result.path).toBe('/invites/tok-1');
   });
 
   it('mints a new invite when there is none to reuse', async () => {
-    const { service, prisma, tx } = buildService();
+    const { service, prisma } = buildService();
     mockAdminRequester(prisma);
-    tx.groupInvite.findFirst.mockResolvedValue(null);
-    tx.groupInvite.create.mockImplementation(({ data }) =>
+    prisma.groupInvite.findFirst.mockResolvedValue(null);
+    prisma.groupInvite.create.mockImplementation(({ data }) =>
       Promise.resolve({ id: 'inv-2', ...data }),
     );
 
     const result = await service.create(GROUP_ID, { createdById: ADMIN_ID });
 
-    expect(tx.groupInvite.create).toHaveBeenCalledTimes(1);
+    expect(prisma.groupInvite.create).toHaveBeenCalledTimes(1);
     expect(result.path).toBe(`/invites/${result.token}`);
   });
 
@@ -99,7 +101,8 @@ describe('GroupInvitesService.create', () => {
 
     await service.create(GROUP_ID, { createdById: ADMIN_ID, maxUses: 5 });
 
-    expect(prisma.$transaction).not.toHaveBeenCalled();
+    // Explicit options never touch the reuse read.
+    expect(prisma.groupInvite.findFirst).not.toHaveBeenCalled();
     expect(prisma.groupInvite.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ maxUses: 5 }),
@@ -108,21 +111,24 @@ describe('GroupInvitesService.create', () => {
   });
 
   it('reuses per target: a closed invite only matches the same guest', async () => {
-    const { service, prisma, tx } = buildService();
+    const { service, prisma } = buildService();
     mockAdminRequester(prisma);
     // target guest lookup: unclaimed, still in the group
     prisma.groupMember.findUnique.mockResolvedValueOnce({
       userId: null,
       leftAt: null,
     });
-    tx.groupInvite.findFirst.mockResolvedValue({ id: 'inv-4', token: 'tok-4' });
+    prisma.groupInvite.findFirst.mockResolvedValue({
+      id: 'inv-4',
+      token: 'tok-4',
+    });
 
     const result = await service.create(GROUP_ID, {
       createdById: ADMIN_ID,
       targetGroupMemberId: 'guest-1',
     });
 
-    expect(tx.groupInvite.findFirst).toHaveBeenCalledWith(
+    expect(prisma.groupInvite.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ targetGroupMemberId: 'guest-1' }),
       }),
@@ -130,8 +136,36 @@ describe('GroupInvitesService.create', () => {
     expect(result.path).toBe('/invites/tok-4');
   });
 
+  it('resolves a lost mint race by re-reading the winner', async () => {
+    const { service, prisma } = buildService();
+    mockAdminRequester(prisma);
+    // Miss on the optimistic read, then the concurrent winner surfaces on the re-read.
+    prisma.groupInvite.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'inv-win', token: 'tok-win' });
+    prisma.groupInvite.create.mockRejectedValue(uniqueViolation());
+
+    const result = await service.create(GROUP_ID, { createdById: ADMIN_ID });
+
+    expect(prisma.groupInvite.findFirst).toHaveBeenCalledTimes(2);
+    expect(result.path).toBe('/invites/tok-win');
+  });
+
+  it('rethrows a unique violation the re-read cannot resolve', async () => {
+    const { service, prisma } = buildService();
+    mockAdminRequester(prisma);
+    // Both reads miss (e.g. an unrelated collision) — surface the error, not a broken payload.
+    prisma.groupInvite.findFirst.mockResolvedValue(null);
+    const error = uniqueViolation();
+    prisma.groupInvite.create.mockRejectedValue(error);
+
+    await expect(
+      service.create(GROUP_ID, { createdById: ADMIN_ID }),
+    ).rejects.toBe(error);
+  });
+
   it('forbids non-admin members from creating invites', async () => {
-    const { service, prisma, tx } = buildService();
+    const { service, prisma } = buildService();
     prisma.group.findUnique.mockResolvedValue({ id: GROUP_ID });
     prisma.groupMember.findUnique.mockResolvedValueOnce({
       id: 'member-2',
@@ -142,12 +176,11 @@ describe('GroupInvitesService.create', () => {
     await expect(
       service.create(GROUP_ID, { createdById: ADMIN_ID }),
     ).rejects.toBeInstanceOf(ForbiddenException);
-    expect(tx.groupInvite.create).not.toHaveBeenCalled();
     expect(prisma.groupInvite.create).not.toHaveBeenCalled();
   });
 
   it('rejects a closed invite whose target already has an account, with a stable code', async () => {
-    const { service, prisma, tx } = buildService();
+    const { service, prisma } = buildService();
     mockAdminRequester(prisma);
     prisma.groupMember.findUnique.mockResolvedValueOnce({
       userId: 'user-9',
@@ -168,7 +201,6 @@ describe('GroupInvitesService.create', () => {
     expect((rejection as BadRequestException).getResponse()).toMatchObject({
       code: 'GUEST_ALREADY_CLAIMED',
     });
-    expect(prisma.$transaction).not.toHaveBeenCalled();
-    expect(tx.groupInvite.create).not.toHaveBeenCalled();
+    expect(prisma.groupInvite.create).not.toHaveBeenCalled();
   });
 });

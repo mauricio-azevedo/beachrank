@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Body, Meta, Title } from '@/components/ui/text';
 import { apiErrorMessage } from '@/lib/api-error';
 import { nameInitial } from '@/lib/avatar';
@@ -114,20 +115,18 @@ export function ClaimOfferClient({ stubId }: Props) {
 
   if (declined) {
     return (
-      <div className="flex min-h-[70vh] flex-col items-center pt-12 text-center">
-        <span className="flex size-[88px] items-center justify-center rounded-full bg-surface text-muted-foreground shadow-hairline">
-          <Check className="size-10 text-muted-foreground" strokeWidth={2.2} aria-hidden />
-        </span>
-        <Title className="mt-6 text-foreground">Tudo certo</Title>
-        <Body className="mx-auto mt-2 max-w-[19rem] text-muted-foreground">
-          Avisamos o admin do grupo que esse perfil não é você.
-        </Body>
+      <EmptyState
+        className="min-h-[70vh] pt-12"
+        icon={<Check className="size-10 text-muted-foreground" strokeWidth={2.2} aria-hidden />}
+        title="Tudo certo"
+        hint="Avisamos o admin do grupo que esse perfil não é você."
+      >
         <div className="mt-auto w-full pt-8">
           <Button size="lg" variant="secondary" className="w-full" onClick={() => router.push('/')}>
             Voltar
           </Button>
         </div>
-      </div>
+      </EmptyState>
     );
   }
 

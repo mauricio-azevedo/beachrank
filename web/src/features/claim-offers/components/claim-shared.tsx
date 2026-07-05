@@ -1,8 +1,8 @@
 import { Fragment } from 'react';
 import { cn } from '@/lib/utils';
 import { Label, Meta, Overline, Stat } from '@/components/ui/text';
+import { GroupAvatar } from '@/components/ui/group-avatar';
 import { avatarBgClass, nameInitial } from '@/lib/avatar';
-import { getGroupInitials } from '@/features/groups/helpers/group-initials.helper';
 import { formatFeedItemTime } from '@/features/feed/helpers/feed-item-time.helper';
 import type { ClaimRecentMatch } from '@/types/api';
 
@@ -16,9 +16,7 @@ export function GroupBrandChip({
 }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-accent-dark text-meta font-extrabold text-brand-foreground shadow-[inset_0_0_0_1px_var(--border-accent)]">
-        {getGroupInitials(groupName)}
-      </div>
+      <GroupAvatar name={groupName} size="sm" tone="brand" />
       <div className="flex min-w-0 flex-col">
         <Label className="truncate text-foreground">{title}</Label>
         <Meta className="truncate text-faint-foreground">{groupName}</Meta>

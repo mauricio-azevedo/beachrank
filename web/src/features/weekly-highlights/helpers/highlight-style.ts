@@ -29,11 +29,3 @@ export function highlightStyle(type: HighlightType): HighlightStyle {
   return STYLES[type];
 }
 
-// Deterministic hue (0-360) from a group id, so each group's avatar tint is stable.
-export function hueFromId(id: string): number {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) {
-    hash = (hash * 31 + id.charCodeAt(index)) % 360;
-  }
-  return hash;
-}

@@ -1,9 +1,7 @@
 'use client';
 
-import { Plus, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Body, Title } from '@/components/ui/text';
-import { useMatchDrawer } from '@/features/matches/match-drawer/match-drawer-context';
+import { GroupActions } from '@/features/groups/components/group-actions';
 
 type Props = {
   canManageMatches: boolean;
@@ -14,8 +12,6 @@ type Props = {
 // compose, so registering the first match is the primary action; the roster button
 // is the quieter companion for whoever wants to set up the group first.
 export function GroupEmptyState({ canManageMatches, onOpenMembers }: Props) {
-  const { openCreate } = useMatchDrawer();
-
   return (
     <div className="flex flex-col items-center pt-loose text-center">
       <Title>Nenhuma partida ainda</Title>
@@ -25,17 +21,11 @@ export function GroupEmptyState({ canManageMatches, onOpenMembers }: Props) {
           : 'As partidas e o ranking do grupo vão aparecer aqui.'}
       </Body>
 
-      <div className="mt-section flex w-full items-center justify-center gap-snug">
-        {canManageMatches && (
-          <Button size="lg" className="flex-1" onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            Registrar partida
-          </Button>
-        )}
-        <Button size="icon" variant="secondary" aria-label="Jogadores" onClick={onOpenMembers}>
-          <Users className="h-4 w-4" />
-        </Button>
-      </div>
+      <GroupActions
+        canManageMatches={canManageMatches}
+        onOpenMembers={onOpenMembers}
+        className="mt-section w-full justify-center"
+      />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Label, Meta, Title } from '@/components/ui/text';
-import { getGroupInitials } from '@/features/groups/helpers/group-initials.helper';
+import { GroupAvatar } from '@/components/ui/group-avatar';
 
 // Step 1, common to both invite kinds: the group + who invited you, then "Continuar" to
 // the kind-specific screen (roster or recognition).
@@ -25,9 +25,7 @@ export function InviteWelcome({
         </Title>
 
         <div className="mt-7 flex items-center gap-3 rounded-2xl bg-surface p-3.5 shadow-hairline">
-          <div className="flex size-[2.875rem] shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-accent-dark text-label font-extrabold text-brand-foreground shadow-[inset_0_0_0_1px_var(--border-accent)]">
-            {getGroupInitials(groupName)}
-          </div>
+          <GroupAvatar name={groupName} size="md" tone="brand" />
           <div className="flex min-w-0 flex-col">
             <Label className="truncate text-foreground">{groupName}</Label>
             {inviterName && (

@@ -3,18 +3,8 @@ import { ArrowDown, ArrowUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dot, Label, Meta, Overline, Stat } from '@/components/ui/text';
 import type { GroupHomeCard } from '@/features/groups/types/group-home.type';
-import { hueFromId } from '@/features/weekly-highlights/helpers/highlight-style';
+import { GroupAvatar } from '@/components/ui/group-avatar';
 import { cn } from '@/lib/utils';
-
-function groupInitials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase();
-}
 
 type Tone = 'recent' | 'medium' | 'old';
 
@@ -43,7 +33,6 @@ function lastMatchDisplay(iso: string): { label: string; tone: Tone } {
 }
 
 export function HomeGroupCard({ card }: { card: GroupHomeCard }) {
-  const hue = hueFromId(card.group.id);
   const isMember = card.relationship === 'MEMBER';
   const standing = card.currentUser?.standing;
   const movement = standing?.kind === 'RANKED' ? standing.rankingMovement : null;
@@ -56,18 +45,7 @@ export function HomeGroupCard({ card }: { card: GroupHomeCard }) {
     >
       <Card size="sm">
         <CardContent className="flex items-center gap-comfortable">
-          <span
-            aria-hidden
-            className="flex size-[3.25rem] shrink-0 items-center justify-center rounded-full"
-            style={{
-              background: `linear-gradient(150deg, oklch(65% 0.15 ${hue}), oklch(58% 0.15 ${hue}))`,
-              boxShadow: 'inset 0 0 0 1px var(--border-accent)',
-            }}
-          >
-            <Stat size="md" className="text-white">
-              {groupInitials(card.group.name)}
-            </Stat>
-          </span>
+          <GroupAvatar name={card.group.name} groupId={card.group.id} size="lg" />
 
           <div className="min-w-0 flex-1">
             <Label className="block truncate">{card.group.name}</Label>

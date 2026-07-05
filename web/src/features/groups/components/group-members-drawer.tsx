@@ -22,13 +22,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
 } from '@/components/ui/input-group';
-import { Heading, Label, Meta, Overline } from '@/components/ui/text';
+import { Label, Meta, Overline } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { getAccessToken } from '@/lib/auth';
@@ -574,17 +575,18 @@ function AddGuestsView({
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center px-6 pt-10 text-center">
-            <span className="flex size-14 items-center justify-center rounded-full border border-dashed border-border-accent text-faint-foreground">
-              <UserPlus className="size-6" strokeWidth={2} aria-hidden />
-            </span>
-            <Label className="mt-comfortable text-muted-foreground">
-              Digite um nome e toque <span className="font-extrabold text-brand">+</span>
-            </Label>
-            <Meta className="mt-snug max-w-60 text-faint-foreground">
-              Pode adicionar vários de uma vez — eles entram no grupo quando você confirmar.
-            </Meta>
-          </div>
+          <EmptyState
+            className="px-6 pt-10"
+            size="sm"
+            tone="dashed"
+            icon={<UserPlus className="size-6" strokeWidth={2} aria-hidden />}
+            title={
+              <>
+                Digite um nome e toque <span className="font-extrabold text-brand">+</span>
+              </>
+            }
+            hint="Pode adicionar vários de uma vez — eles entram no grupo quando você confirmar."
+          />
         )}
 
         {error && <Meta className="mt-base block text-center text-destructive">{error}</Meta>}
@@ -625,15 +627,16 @@ function discardMessage(names: string[]): string {
 // way to the next step. Solo viewers are always members, so the '+' is there.
 function EmptyRoster() {
   return (
-    <div className="flex flex-col items-center px-6 pb-20 pt-14 text-center">
-      <span className="flex size-24 items-center justify-center rounded-full bg-surface text-faint-foreground shadow-hairline">
-        <Users className="size-10" strokeWidth={1.6} aria-hidden />
-      </span>
-      <Heading className="mt-comfortable">Só você por aqui</Heading>
-      <Meta className="mt-snug max-w-60 text-muted-foreground">
-        Toque no <span className="font-extrabold text-brand">+</span> para adicionar.
-      </Meta>
-    </div>
+    <EmptyState
+      className="px-6 pb-20 pt-14"
+      icon={<Users className="size-10" strokeWidth={1.6} aria-hidden />}
+      title="Só você por aqui"
+      hint={
+        <>
+          Toque no <span className="font-extrabold text-brand">+</span> para adicionar.
+        </>
+      }
+    />
   );
 }
 

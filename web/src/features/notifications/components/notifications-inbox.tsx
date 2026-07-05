@@ -10,6 +10,7 @@ import {
   markAllNotificationsRead,
 } from '@/features/notifications/api/notifications.api';
 import { NotificationCard } from './notification-card';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type Status = 'loading' | 'ready' | 'error';
 
@@ -74,12 +75,12 @@ export function NotificationsInbox() {
 
   if (items.length === 0) {
     return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center">
-        <span className="flex size-14 items-center justify-center rounded-full bg-surface text-faint-foreground shadow-hairline">
-          <BellOff className="size-6" aria-hidden />
-        </span>
-        <Body className="text-muted-foreground">Você está em dia. Nada por aqui.</Body>
-      </div>
+      <EmptyState
+        className="min-h-[50vh] justify-center"
+        size="sm"
+        icon={<BellOff className="size-6" aria-hidden />}
+        title="Você está em dia. Nada por aqui."
+      />
     );
   }
 

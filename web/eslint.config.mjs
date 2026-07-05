@@ -12,7 +12,23 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // Generated/staged design-sync bundles — not source, never linted.
+    '.ds-sync/**',
+    'ds-bundle/**',
   ]),
+  {
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

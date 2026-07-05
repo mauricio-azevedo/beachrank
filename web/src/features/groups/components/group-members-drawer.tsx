@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search, Send, UserPlus, Users, X } from 'lucide-react';
 import {
   Drawer,
@@ -321,42 +321,37 @@ export function GroupMembersDrawer({
           }}
           dismissible={manageView?.kind !== 'add' || queue.length === 0}
         >
-          {/* Minimum height (add view) so the sheet doesn't shrink when the empty state
-              gives way to the first queued guest (the queue is shorter than the empty
-              illustration). */}
-          <DrawerContent
-            aria-describedby={undefined}
-            size="fit"
-            className={manageView?.kind === 'add' ? 'min-h-[80dvh]' : undefined}
-          >
-            {manageView?.kind === 'chooser' && (
-              <AddPlayersChooser
-                onManual={() => openManage({ kind: 'add' })}
-                onInvite={() => openManage({ kind: 'invite', guest: null })}
-              />
-            )}
+          <DrawerContent aria-describedby={undefined} size="fit">
+            <AnimatedSheetHeight>
+              {manageView?.kind === 'chooser' && (
+                <AddPlayersChooser
+                  onManual={() => openManage({ kind: 'add' })}
+                  onInvite={() => openManage({ kind: 'invite', guest: null })}
+                />
+              )}
 
-            {manageView?.kind === 'invite' && (
-              <InviteSheetContent
-                groupId={groupId}
-                groupName={groupName}
-                guest={manageView.guest}
-              />
-            )}
+              {manageView?.kind === 'invite' && (
+                <InviteSheetContent
+                  groupId={groupId}
+                  groupName={groupName}
+                  guest={manageView.guest}
+                />
+              )}
 
-            {manageView?.kind === 'add' && (
-              <AddGuestsView
-                requestCancel={requestCancel}
-                name={name}
-                setName={setName}
-                enqueue={enqueue}
-                queue={queue}
-                dequeue={dequeue}
-                error={error}
-                busy={busy}
-                commit={commit}
-              />
-            )}
+              {manageView?.kind === 'add' && (
+                <AddGuestsView
+                  requestCancel={requestCancel}
+                  name={name}
+                  setName={setName}
+                  enqueue={enqueue}
+                  queue={queue}
+                  dequeue={dequeue}
+                  error={error}
+                  busy={busy}
+                  commit={commit}
+                />
+              )}
+            </AnimatedSheetHeight>
           </DrawerContent>
         </DrawerNested>
       </DrawerContent>
@@ -390,6 +385,39 @@ type ManageView =
   | { kind: 'chooser' }
   | { kind: 'add' }
   | { kind: 'invite'; guest: { id: string; name: string } | null };
+
+// vaul only animates transform, so swapping views inside the open manage sheet would
+// snap its height in one frame — this wrapper measures the active view and eases the
+// change instead (vaul's own easing). First mount starts at `auto` (transitions from
+// auto don't run), so opening still animates only via vaul's slide; only view-to-view
+// (px → px) changes ease.
+function AnimatedSheetHeight({ children }: { children: ReactNode }) {
+  const innerRef = useRef<HTMLDivElement | null>(null);
+  const [height, setHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const node = innerRef.current;
+    if (!node) {
+      return;
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      setHeight(entries[0].contentRect.height);
+    });
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      className="min-h-0 overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+      style={{ height: height ?? 'auto' }}
+    >
+      <div ref={innerRef}>{children}</div>
+    </div>
+  );
+}
 
 // The two ways of putting someone in the group: create the profile now and invite
 // later, or send the group link and let them enter (as a guest's heir or brand new).
@@ -475,7 +503,9 @@ function AddGuestsView({
   commit: () => void;
 }) {
   return (
-    <>
+    // Minimum height so the sheet doesn't shrink when the empty state gives way to
+    // the first queued guest (the queue is shorter than the empty illustration).
+    <div className="flex min-h-[80dvh] flex-col">
       <DrawerActionHeader
         left={{ kind: 'cancel', onClick: requestCancel }}
         title="Adicionar convidados"
@@ -571,7 +601,7 @@ function AddGuestsView({
           {queue.length > 0 ? `Adicionar ${queue.length} ao grupo` : 'Adicionar ao grupo'}
         </Button>
       </DrawerFooter>
-    </>
+    </div>
   );
 }
 

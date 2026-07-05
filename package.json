@@ -2,6 +2,7 @@
   "scripts": {
     "lint": "npm --prefix api run lint && npm --prefix web run lint",
     "lint:check": "npm --prefix api run lint:check && npm --prefix web run lint:check",
+    "knip": "npm --prefix api run knip && npm --prefix web run knip",
     "format": "prettier . --write --ignore-unknown",
     "format:check": "prettier . --check --ignore-unknown"
   },

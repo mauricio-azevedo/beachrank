@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import type {
   FeedItemType,
-  GroupMemberRole,
   GroupRankingProjectionStatus,
 } from '../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
@@ -115,7 +114,7 @@ export class GroupHomeService {
           },
           currentUser: {
             membershipId: membership.id,
-            role: membership.role as GroupMemberRole,
+            role: membership.role,
             standing: this.buildStanding(membership),
           },
           leaders: this.parseLeaders(summary?.leaders),
@@ -220,7 +219,7 @@ export class GroupHomeService {
           currentUser: membership
             ? {
                 membershipId: membership.id,
-                role: membership.role as GroupMemberRole,
+                role: membership.role,
                 standing: this.buildStanding(membership),
               }
             : null,
@@ -330,7 +329,10 @@ export class GroupHomeService {
 
   private async findMatchStats(groupIds: string[]) {
     if (groupIds.length === 0) {
-      return new Map<string, { matchesCount: number; lastMatchAt: Date | null }>();
+      return new Map<
+        string,
+        { matchesCount: number; lastMatchAt: Date | null }
+      >();
     }
 
     const rows = await this.prisma.$queryRaw<

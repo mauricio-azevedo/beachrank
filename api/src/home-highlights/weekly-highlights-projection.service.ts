@@ -67,7 +67,9 @@ type HighlightCandidate = {
 };
 
 // Mirrors RatingProjectionService.buildRankingState: sort by rating desc, ties share a rank.
-function buildRanking(ratingByMember: Map<string, number>): Map<string, number> {
+function buildRanking(
+  ratingByMember: Map<string, number>,
+): Map<string, number> {
   const sorted = [...ratingByMember.entries()]
     .map(([id, rating]) => ({ id, rating }))
     .sort((a, b) =>
@@ -129,7 +131,10 @@ export class WeeklyHighlightsProjectionService {
       ratingByMember.set(member.id, INITIAL_RATING);
     }
 
-    const rankSeqByMember = new Map<string, Array<{ at: Date; rank: number }>>();
+    const rankSeqByMember = new Map<
+      string,
+      Array<{ at: Date; rank: number }>
+    >();
     const resultsByMember = new Map<string, MatchResult[]>();
     // Most recent match at which each member became the *sole* group leader.
     const leadershipAtByMember = new Map<string, Date>();
@@ -174,7 +179,10 @@ export class WeeklyHighlightsProjectionService {
           results = [];
           resultsByMember.set(player.groupMemberId, results);
         }
-        results.push({ at: match.playedAt, won: match.winnerTeam === player.team });
+        results.push({
+          at: match.playedAt,
+          won: match.winnerTeam === player.team,
+        });
       }
     }
 

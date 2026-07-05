@@ -8,10 +8,7 @@ import { WeeklyHighlightsController } from './weekly-highlights.controller';
 @Module({
   imports: [PrismaModule, AuthModule],
   controllers: [WeeklyHighlightsController],
-  providers: [
-    WeeklyHighlightsProjectionService,
-    WeeklyHighlightsReadService,
-  ],
+  providers: [WeeklyHighlightsProjectionService, WeeklyHighlightsReadService],
   exports: [WeeklyHighlightsProjectionService],
 })
 export class HomeHighlightsModule {}

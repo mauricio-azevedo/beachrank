@@ -1,13 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronRight, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import type { Group, GroupMember, Match, MyGroup } from '@/types/api';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Body, Dot, Label, Meta, Stat, Title } from '@/components/ui/text';
 import { StandingCard } from '@/features/groups/components/standing-card';
 import { getGroupInitials } from '@/features/groups/helpers/group-initials.helper';
-import { TOUCH_TARGET_48 } from '@/lib/touch-target';
 
 export type GroupSummaryCardProps = {
   group: Group;
@@ -17,8 +16,6 @@ export type GroupSummaryCardProps = {
   membership: MyGroup | null;
   // 0-match group: identity only — search and standing wait for the first match.
   isEmpty: boolean;
-  onOpenMembers: () => void;
-  onOpenMatches: () => void;
 };
 
 export function GroupSummaryCard({
@@ -28,8 +25,6 @@ export function GroupSummaryCard({
   matches,
   membership,
   isEmpty,
-  onOpenMembers,
-  onOpenMatches,
 }: GroupSummaryCardProps) {
   const currentRankIndex = membership
     ? ranking.findIndex((member) => member.id === membership.id)
@@ -54,13 +49,7 @@ export function GroupSummaryCard({
 
   return (
     <div className="space-y-5">
-      <GroupIdentityHeader
-        group={group}
-        memberCount={memberCount}
-        matchCount={matchCount}
-        onOpenMembers={onOpenMembers}
-        onOpenMatches={onOpenMatches}
-      />
+      <GroupIdentityHeader group={group} memberCount={memberCount} matchCount={matchCount} />
 
       {!isEmpty && (
         <>
@@ -162,14 +151,10 @@ function GroupIdentityHeader({
   group,
   memberCount,
   matchCount,
-  onOpenMembers,
-  onOpenMatches,
 }: {
   group: Group;
   memberCount: number;
   matchCount: number;
-  onOpenMembers: () => void;
-  onOpenMatches: () => void;
 }) {
   return (
     <div className="flex flex-col items-center text-center">
@@ -183,66 +168,19 @@ function GroupIdentityHeader({
       <Title className="mt-base">{group.name}</Title>
 
       <Meta className="mt-snug flex items-center gap-snug text-muted-foreground">
-        <IdentityStat
-          count={memberCount}
-          label={memberCount === 1 ? 'jogador' : 'jogadores'}
-          actionLabel="Ver jogadores"
-          onClick={onOpenMembers}
-          chevron
-        />
+        <span className="flex items-center gap-tight">
+          <span className="text-foreground">{memberCount}</span>
+          {memberCount === 1 ? 'jogador' : 'jogadores'}
+        </span>
         <Dot className="mx-0" />
-        <IdentityStat
-          count={matchCount}
-          label={matchCount === 1 ? 'partida' : 'partidas'}
-          actionLabel="Ver partidas"
-          onClick={onOpenMatches}
-        />
+        <span className="flex items-center gap-tight">
+          <span className="text-foreground">{matchCount}</span>
+          {matchCount === 1 ? 'partida' : 'partidas'}
+        </span>
       </Meta>
 
       {group.description && <GroupDescription text={group.description} />}
     </div>
-  );
-}
-
-// A count in the identity line that doubles as the entry point to what it counts
-// ("N jogadores ›" opens the roster; "M partidas" jumps to the tab). Zero counts
-// stay plain text — nothing to see yet.
-function IdentityStat({
-  count,
-  label,
-  actionLabel,
-  onClick,
-  chevron = false,
-}: {
-  count: number;
-  label: string;
-  actionLabel: string;
-  onClick: () => void;
-  chevron?: boolean;
-}) {
-  const content = (
-    <>
-      <span className="text-foreground">{count}</span>
-      {label}
-    </>
-  );
-
-  if (count === 0) {
-    return <span className="flex items-center gap-tight">{content}</span>;
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={actionLabel}
-      className={`flex items-center gap-tight ${TOUCH_TARGET_48}`}
-    >
-      {content}
-      {chevron && (
-        <ChevronRight className="size-3 text-faint-foreground" strokeWidth={2.6} aria-hidden />
-      )}
-    </button>
   );
 }
 

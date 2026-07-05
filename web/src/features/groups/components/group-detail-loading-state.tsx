@@ -19,8 +19,11 @@ export function GroupDetailLoadingState() {
           <div className="h-60 animate-pulse rounded-hero bg-muted/60" />
         </div>
 
-        {/* register match */}
-        <div className="h-12 animate-pulse rounded-pill bg-muted" />
+        {/* actions: register match + players button */}
+        <div className="flex items-center gap-snug">
+          <div className="h-12 flex-1 animate-pulse rounded-pill bg-muted" />
+          <div className="size-12 shrink-0 animate-pulse rounded-full bg-muted/70" />
+        </div>
       </div>
 
       {/* tabs */}

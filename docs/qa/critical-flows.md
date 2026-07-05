@@ -70,8 +70,8 @@ re-render.
 ### Group detail
 
 - Group detail page loads header, description, actions, tabs, ranking, and matches.
-- The "N jogadores" identity stat opens the players sheet; "M partidas" jumps to the
-  Partidas tab.
+- The Users icon button next to "Registrar partida" opens the players sheet; the
+  identity counters ("N jogadores · M partidas") are plain text, not links.
 - A 0-match group shows the empty hero ("Nenhuma partida ainda" + Registrar partida +
   players button) instead of search, standing, and tabs — and recovers the full layout
   after the first match is registered.

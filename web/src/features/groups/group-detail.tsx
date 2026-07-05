@@ -44,7 +44,7 @@ export function GroupDetail({ groupId, tab, autoOpenCompose = false }: Props) {
   const [data, setData] = useState<GroupDetailData | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [refreshKey, setRefreshKey] = useState(0);
-  // Owned here (not in the tabs) so the "N partidas" identity stat can switch tabs too.
+  // Owned here (not in the tabs) so tab changes and the URL stay in sync in one place.
   const [selectedTab, setSelectedTab] = useState<GroupTab>(activeTab);
   const [membersOpen, setMembersOpen] = useState(false);
   const loadedGroupIdRef = useRef<string | null>(null);
@@ -160,8 +160,6 @@ export function GroupDetail({ groupId, tab, autoOpenCompose = false }: Props) {
               matches={data.matches}
               membership={data.membership}
               isEmpty={isEmpty}
-              onOpenMembers={() => setMembersOpen(true)}
-              onOpenMatches={() => changeTab('matches')}
             />
 
             {isEmpty ? (
@@ -170,7 +168,10 @@ export function GroupDetail({ groupId, tab, autoOpenCompose = false }: Props) {
                 onOpenMembers={() => setMembersOpen(true)}
               />
             ) : (
-              <GroupActions canManageMatches={canManageMatches} />
+              <GroupActions
+                canManageMatches={canManageMatches}
+                onOpenMembers={() => setMembersOpen(true)}
+              />
             )}
           </div>
 

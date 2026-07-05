@@ -25,17 +25,17 @@ export function GroupEmptyState({ canManageMatches, onOpenMembers }: Props) {
           : 'As partidas e o ranking do grupo vão aparecer aqui.'}
       </Body>
 
-      {canManageMatches && (
-        <div className="mt-section flex w-full items-center gap-snug">
+      <div className="mt-section flex w-full items-center justify-center gap-snug">
+        {canManageMatches && (
           <Button size="lg" className="flex-1" onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Registrar partida
           </Button>
-          <Button size="icon" variant="secondary" aria-label="Jogadores" onClick={onOpenMembers}>
-            <Users className="size-5" />
-          </Button>
-        </div>
-      )}
+        )}
+        <Button size="icon" variant="secondary" aria-label="Jogadores" onClick={onOpenMembers}>
+          <Users className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }

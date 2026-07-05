@@ -1,24 +1,28 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMatchDrawer } from '@/features/matches/match-drawer/match-drawer-context';
 
 type Props = {
   canManageMatches: boolean;
+  onOpenMembers: () => void;
 };
 
-export function GroupActions({ canManageMatches }: Props) {
+export function GroupActions({ canManageMatches, onOpenMembers }: Props) {
   const { openCreate } = useMatchDrawer();
 
-  if (!canManageMatches) {
-    return null;
-  }
-
   return (
-    <Button size="lg" className="w-full" onClick={openCreate}>
-      <Plus className="h-4 w-4" />
-      Registrar partida
-    </Button>
+    <div className="flex items-center gap-snug">
+      {canManageMatches && (
+        <Button size="lg" className="flex-1" onClick={openCreate}>
+          <Plus className="h-4 w-4" />
+          Registrar partida
+        </Button>
+      )}
+      <Button size="icon" variant="secondary" aria-label="Jogadores" onClick={onOpenMembers}>
+        <Users className="h-4 w-4" />
+      </Button>
+    </div>
   );
 }

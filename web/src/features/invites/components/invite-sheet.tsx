@@ -9,6 +9,7 @@ import { MemberAvatar } from '@/components/ui/member-avatar';
 import { Meta, Overline } from '@/components/ui/text';
 import { createGroupInvite } from '@/features/invites/api/invites.api';
 import { getGroupInitials } from '@/features/groups/helpers/group-initials.helper';
+import { getApiErrorCode } from '@/lib/api-error';
 import { getAccessToken } from '@/lib/auth';
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 import type { GroupInvite } from '@/types/api';
@@ -54,7 +55,7 @@ export function InviteSheetContent({ groupId, groupName, guest }: InviteSheetCon
         if (!isCurrent) return;
         // The only expected business rejection: the guest got claimed while this
         // entry point was still showing them as pending.
-        const claimed = error instanceof Error && error.message.includes('já tem uma conta');
+        const claimed = getApiErrorCode(error) === 'GUEST_ALREADY_CLAIMED';
         setStatus({ state: 'error', kind: claimed ? 'claimed' : 'generic' });
       });
 

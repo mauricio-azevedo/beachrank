@@ -7,6 +7,7 @@ import {
 import { randomBytes } from 'crypto';
 import type { Prisma } from '../generated/prisma/client';
 import { GroupMemberRole, NotificationType } from '../generated/prisma/enums';
+import { API_ERROR_CODES, codedBadRequest } from '../common/api-errors';
 import {
   MEMBER_USER_SELECT,
   resolveMemberDisplayName,
@@ -81,7 +82,10 @@ export class GroupInvitesService {
       }
 
       if (target.userId !== null) {
-        throw new BadRequestException('Esse jogador já tem uma conta');
+        throw codedBadRequest(
+          API_ERROR_CODES.GUEST_ALREADY_CLAIMED,
+          'Esse jogador já tem uma conta',
+        );
       }
     }
 

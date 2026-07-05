@@ -69,8 +69,16 @@ only (except route files, which need `default`).
 
 - `lib/api-client.ts` exposes `apiRequest<T>(path, { token, body, ...opts })`:
   sets JSON headers, `Authorization: Bearer <token>` when provided, throws
-  `Error(message)` on non-2xx (message extracted from the JSON body, arrays
-  joined). Base URL from `NEXT_PUBLIC_API_URL`.
+  **`ApiError`** (`lib/api-error.ts`, extends `Error`) on non-2xx — `message`
+  extracted from the JSON body (arrays joined), plus `status` (HTTP) and `code`
+  (machine-readable business code, `ApiErrorCode` in `types/api.ts`, mirrored from
+  `api/src/common/api-errors.ts`). Base URL from `NEXT_PUBLIC_API_URL`.
+- **Branch on `code`/`status`, never on `message`** — backend copy changes freely.
+  For error copy, use the single mapper `apiErrorMessage(error, fallback, overrides?)`
+  (`lib/api-error.ts`): central PT copy per shared code, per-screen `overrides` for
+  context-specific phrasing, and the screen's own `fallback` otherwise. Helpers
+  `getApiErrorCode`/`getApiErrorStatus` cover boolean branches (e.g. the invite
+  sheet's terminal `GUEST_ALREADY_CLAIMED` state).
 - **Expired-session handling**: before sending (and on a `401` afterwards), if the
   supplied token is past its `exp` (`isAccessTokenExpired`, `lib/auth.ts`),
   `apiRequest` calls `triggerSessionExpired()` — which clears the token and sends the

@@ -1,12 +1,12 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { API_ERROR_CODES, codedConflict } from '../common/api-errors';
 import { isAvatarColorKey } from '../common/avatar-color';
 import type { UpdateProfileInput } from './types/update-profile-input.type';
 
@@ -140,7 +140,10 @@ export class MeService {
       return this.buildProfileResponse(updatedUser);
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
-        throw new ConflictException('Email already in use');
+        throw codedConflict(
+          API_ERROR_CODES.EMAIL_IN_USE,
+          'Email already in use',
+        );
       }
 
       if (this.isRecordNotFoundError(error)) {
@@ -285,7 +288,7 @@ export class MeService {
     });
 
     if (existingUser && existingUser.id !== currentUserId) {
-      throw new ConflictException('Email already in use');
+      throw codedConflict(API_ERROR_CODES.EMAIL_IN_USE, 'Email already in use');
     }
   }
 

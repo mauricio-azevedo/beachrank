@@ -36,8 +36,6 @@ built in) and `components/ui/drawer.tsx` (`DrawerActionHeader` — one header ac
     `claim-offer-client`. Extract a `useFormSubmit` hook.
 - **Duplicated auth/token plumbing.** `getAccessToken()` → call → `setAccessToken(result.accessToken)`
   is copy-pasted across the same forms; fold into the submit hook or a small wrapper.
-- **Two friendly-error mappers.** `friendlyError` (edit-profile-view) and `getFriendlyPasswordError`
-  (password-view) parse backend messages separately — consolidate into one mapper (API layer).
 - **Real-time field guidance is one-off.** `password-view`'s `PasswordGuidance` (live, colored) is
   the good pattern; auth/create-group only validate on submit.
 - **Info/warn explainer row duplicated.** The `Info` icon + `Meta` row exists boxed/warn in

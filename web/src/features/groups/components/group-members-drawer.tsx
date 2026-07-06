@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Search, Send, UserPlus, Users, X } from 'lucide-react';
+import { Plus, Search, Send, UserPlus, X } from 'lucide-react';
 import {
   Drawer,
   DrawerActionHeader,
@@ -99,11 +99,6 @@ export function GroupMembersDrawer({
 
   // Only active members can add guests (the backend allows any active member).
   const canAddGuests = viewerRole !== null;
-
-  // The lone-member view: a roster listing only yourself teaches nothing, so it gives
-  // way to a nudge to add people. Visitors browsing a one-person group still see the
-  // real list — "só você" would be a lie for them.
-  const soloViewer = viewerRole !== null && members.length <= 1;
 
   const buckets = useMemo(() => categorize(members), [members]);
 
@@ -259,28 +254,24 @@ export function GroupMembersDrawer({
           )}
         </div>
 
-        {!soloViewer && (
-          <div className="shrink-0 px-4 pb-2">
-            <InputGroup className="h-11">
-              <InputGroupAddon>
-                <Search />
-              </InputGroupAddon>
-              <InputGroupInput
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar jogador"
-                aria-label="Buscar jogador"
-                className="[&::-webkit-search-cancel-button]:hidden"
-              />
-            </InputGroup>
-          </div>
-        )}
+        <div className="shrink-0 px-4 pb-2">
+          <InputGroup className="h-11">
+            <InputGroupAddon>
+              <Search />
+            </InputGroupAddon>
+            <InputGroupInput
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar jogador"
+              aria-label="Buscar jogador"
+              className="[&::-webkit-search-cancel-button]:hidden"
+            />
+          </InputGroup>
+        </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-1 [scrollbar-width:none]">
-          {soloViewer ? (
-            <EmptyRoster />
-          ) : noResults ? (
+          {noResults ? (
             <Meta className="block px-6 py-10 text-center text-faint-foreground">
               Nenhum jogador encontrado
             </Meta>
@@ -625,23 +616,6 @@ function discardMessage(names: string[]): string {
   if (n === 2)
     return 'Eles ainda não entraram no grupo. Se você sair agora, o que digitou se perde.';
   return `${names[0]}, ${names[1]} e mais ${n - 2} ainda não entraram no grupo. Se sair agora, todos serão perdidos.`;
-}
-
-// Only the viewer in the group: their own row teaches nothing, so the list gives
-// way to the next step. Solo viewers are always members, so the '+' is there.
-function EmptyRoster() {
-  return (
-    <EmptyState
-      className="px-6 pb-20 pt-14"
-      icon={<Users className="size-10" strokeWidth={1.6} aria-hidden />}
-      title="Só você por aqui"
-      hint={
-        <>
-          Toque no <span className="font-extrabold text-brand">+</span> para adicionar.
-        </>
-      }
-    />
-  );
 }
 
 function RosterSection({

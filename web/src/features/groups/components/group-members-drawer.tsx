@@ -47,6 +47,8 @@ type GroupMembersDrawerProps = {
   onOpenChange: (open: boolean) => void;
   groupId: string;
   groupName: string;
+  // The group's stored avatar colour, for the invite sheet's group monogram.
+  groupAvatarColor?: string | null;
   viewerRole: GroupMemberRole | null;
   members: GroupMember[];
   // Live ranking — for the position line in a member's profile.
@@ -87,6 +89,7 @@ export function GroupMembersDrawer({
   onOpenChange,
   groupId,
   groupName,
+  groupAvatarColor,
   viewerRole,
   members,
   ranking,
@@ -335,6 +338,7 @@ export function GroupMembersDrawer({
                 <InviteSheetContent
                   groupId={groupId}
                   groupName={groupName}
+                  groupAvatarColor={groupAvatarColor}
                   guest={manageView.guest}
                 />
               )}

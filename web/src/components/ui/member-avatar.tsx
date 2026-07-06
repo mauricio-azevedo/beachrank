@@ -1,5 +1,6 @@
 import { memberInitials } from '@/lib/avatar';
 import { avatarColorGradient, DEFAULT_AVATAR_COLOR } from '@/lib/avatar-color';
+import { AvatarShell } from '@/components/ui/avatar-shell';
 import { cn } from '@/lib/utils';
 
 export type MemberAvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -46,11 +47,10 @@ export function MemberAvatar({
     : (avatarColorGradient(avatarColor) ?? avatarColorGradient(DEFAULT_AVATAR_COLOR));
 
   return (
-    <span
-      aria-hidden
-      style={gradient ? { backgroundImage: gradient } : undefined}
+    <AvatarShell
+      gradient={gradient}
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-full font-display font-extrabold',
+        'font-display font-extrabold',
         MEMBER_AVATAR_SIZE_CLASS[size],
         isStub
           ? 'border border-dashed border-border-accent text-muted-foreground'
@@ -59,6 +59,6 @@ export function MemberAvatar({
       )}
     >
       {memberInitials(name, initials)}
-    </span>
+    </AvatarShell>
   );
 }

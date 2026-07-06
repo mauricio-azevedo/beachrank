@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, UserPlus, Users } from 'lucide-react';
+import { ChevronRight, Plus, UserPlus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Body, Heading, Label } from '@/components/ui/text';
 import { getAllGroups } from '@/features/groups/api/groups.api';
 import type { GroupHomeCard } from '@/features/groups/types/group-home.type';
+import { CreateGroupSheet } from '@/features/groups/components/create-group-sheet';
 import { buildAuthPath } from '@/features/auth/auth-navigation';
 import { getAccessToken } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,7 @@ export function GroupsSection({
   const [filter, setFilter] = useState<Filter>('Meus');
   const [allGroups, setAllGroups] = useState<GroupHomeCard[] | null>(null);
   const [allStatus, setAllStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [createOpen, setCreateOpen] = useState(false);
 
   // Busca os grupos uma vez quando "Todos" é aberto. allStatus fica FORA das deps:
   // se estivesse, o setAllStatus('loading') aqui re-rodaria o effect e o cleanup
@@ -109,19 +111,42 @@ export function GroupsSection({
       ) : sectionStatus === 'error' ? (
         <GroupsError />
       ) : showEmpty || list.length === 0 ? (
-        <GroupsEmptyState isLoggedIn={isLoggedIn} />
+        <GroupsEmptyState isLoggedIn={isLoggedIn} onCreate={() => setCreateOpen(true)} />
       ) : (
         <div className="space-y-base">
           {list.map((card) => (
             <HomeGroupCard key={card.group.id} card={card} />
           ))}
+          {!isTodos && <CreateGroupRow onClick={() => setCreateOpen(true)} />}
         </div>
       )}
+
+      <CreateGroupSheet open={createOpen} onOpenChange={setCreateOpen} />
     </section>
   );
 }
 
-function GroupsEmptyState({ isLoggedIn }: { isLoggedIn: boolean }) {
+function CreateGroupRow({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-[3.75rem] w-full items-center gap-comfortable rounded-card px-4 shadow-[inset_0_0_0_1.5px_var(--border-accent)] transition-transform active:scale-[0.99]"
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-hairline">
+        <Plus className="size-[1.125rem]" strokeWidth={2.6} aria-hidden />
+      </span>
+      <Label className="min-w-0 flex-1 text-left text-foreground">Criar grupo</Label>
+      <ChevronRight
+        className="size-5 shrink-0 text-faint-foreground"
+        strokeWidth={2.2}
+        aria-hidden
+      />
+    </button>
+  );
+}
+
+function GroupsEmptyState({ isLoggedIn, onCreate }: { isLoggedIn: boolean; onCreate: () => void }) {
   return (
     <EmptyState
       className="px-4 pt-2"
@@ -132,20 +157,18 @@ function GroupsEmptyState({ isLoggedIn }: { isLoggedIn: boolean }) {
           <Users className="size-8 text-faint-foreground" strokeWidth={1.7} aria-hidden />
         )
       }
-      title={isLoggedIn ? 'Nenhum grupo ainda' : 'Entre pra ver seus grupos'}
+      title={isLoggedIn ? 'Comece seu grupo' : 'Entre pra ver seus grupos'}
       hint={
         isLoggedIn
-          ? 'Entre num grupo pra registrar partidas e acompanhar seu ranking.'
+          ? 'Crie um grupo, chame a galera e registre partidas. O ranking começa aqui.'
           : 'Faça login pra acompanhar seu ranking e registrar partidas.'
       }
     >
       <div className="mt-5 flex w-full max-w-[19rem] flex-col gap-snug">
         {isLoggedIn ? (
-          <Button asChild size="lg">
-            <Link href="/groups">
-              <Plus aria-hidden />
-              Entrar ou criar grupo
-            </Link>
+          <Button size="lg" onClick={onCreate}>
+            <Plus aria-hidden />
+            Criar grupo
           </Button>
         ) : (
           <Button asChild size="lg">

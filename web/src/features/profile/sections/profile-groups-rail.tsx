@@ -34,7 +34,12 @@ function GroupRailCard({ group }: { group: ProfileSummaryGroup }) {
       className="flex w-[9.875rem] shrink-0 flex-col rounded-card bg-surface p-4 shadow-card transition-transform active:scale-[0.98]"
     >
       <div className="flex items-center justify-between">
-        <GroupAvatar name={group.name} groupId={group.id} size="md" />
+        <GroupAvatar
+          name={group.name}
+          groupId={group.id}
+          avatarColor={group.avatarColor}
+          size="md"
+        />
         <RankTrend rankDelta={group.rankDelta} />
       </div>
 

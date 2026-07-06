@@ -1,82 +1,47 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createGroup } from '@/features/groups/api/groups.api';
-import { getAccessToken } from '@/lib/auth';
+import { FormEvent } from 'react';
+import { GroupAvatar } from '@/components/ui/group-avatar';
+import { ColorSwatchPicker } from '@/components/ui/color-swatch-picker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useCreateGroup } from './use-create-group';
 
 export function CreateGroupForm() {
-  const router = useRouter();
+  const {
+    name,
+    setName,
+    description,
+    setDescription,
+    avatarColor,
+    setAvatarColor,
+    error,
+    isSubmitting,
+    canSubmit,
+    submit,
+  } = useCreateGroup();
 
-  const [token, setToken] = useState<string | null>(null);
-  const [isCheckingToken, setIsCheckingToken] = useState(true);
-
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    // The /groups/new route is auth-gated by the AppShell guard, which redirects a
-    // tokenless visitor to /login before this form mounts — so by the time we run
-    // there's a token. We still read it for the submit call.
-    setToken(getAccessToken());
-    setIsCheckingToken(false);
-  }, []);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!token) {
-      setError('Entre na sua conta para criar um grupo.');
-      return;
-    }
-
-    const trimmedName = name.trim();
-    const trimmedDescription = description.trim();
-
-    if (!trimmedName) {
-      setError('Informe o nome do grupo.');
-      return;
-    }
-
-    setError('');
-    setIsSubmitting(true);
-
-    try {
-      const group = await createGroup(token, {
-        name: trimmedName,
-        description: trimmedDescription || undefined,
-      });
-
-      router.push(`/groups/${group.id}`);
-      router.refresh();
-    } catch {
-      setError('Não foi possível criar o grupo. Tente novamente.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  if (isCheckingToken) {
-    return (
-      <Card>
-        <CardContent className="p-4 text-sm text-muted-foreground">
-          Verificando sua conta...
-        </CardContent>
-      </Card>
-    );
+    void submit();
   }
 
   return (
     <Card>
       <CardContent className="p-4">
         <form onSubmit={handleSubmit} className="space-y-comfortable">
+          <div className="flex flex-col items-center gap-comfortable">
+            <GroupAvatar name={name} avatarColor={avatarColor} size="hero" />
+            <ColorSwatchPicker
+              value={avatarColor}
+              onChange={setAvatarColor}
+              className="max-w-[19rem]"
+            />
+          </div>
+
           <div className="space-y-snug">
             <Label htmlFor="name">Nome do grupo</Label>
             <Input
@@ -101,7 +66,7 @@ export function CreateGroupForm() {
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" loading={isSubmitting}>
+          <Button type="submit" className="w-full" loading={isSubmitting} disabled={!canSubmit}>
             Criar grupo
           </Button>
         </form>

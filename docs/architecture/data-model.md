@@ -50,8 +50,9 @@ it lives on `GroupMember`. Fields: `firstName`, `lastName`, `email` (unique),
 ### Group
 
 A competitive community. `visibility` is an enum currently with a single value
-`PUBLIC`. Has one creator (`createdBy`). Deleting a group cascades to nearly all
-group-scoped data.
+`PUBLIC`. `avatarColor` is a palette key (same set as `User.avatarColor`) chosen at
+creation; the frontend owns key→gradient. Has one creator (`createdBy`). Deleting a
+group cascades to nearly all group-scoped data.
 
 ### GroupMember
 

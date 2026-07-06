@@ -4,6 +4,8 @@ export type ProfileSummaryGroup = {
   id: string;
   name: string;
   description: string | null;
+  // Group.avatarColor palette key (NOT NULL) — the frontend owns key→gradient.
+  avatarColor: string;
   rating: number;
   role: GroupMemberRole;
   lastPlayedAt: Date | null;

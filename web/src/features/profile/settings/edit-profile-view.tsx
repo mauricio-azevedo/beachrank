@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Check } from 'lucide-react';
 import { apiErrorMessage } from '@/lib/api-error';
-import { AVATAR_COLORS } from '@/lib/avatar-color';
 import { setAccessToken } from '@/lib/auth';
 import { MemberAvatar } from '@/components/ui/member-avatar';
+import { ColorSwatchPicker } from '@/components/ui/color-swatch-picker';
 import { Button } from '@/components/ui/button';
 import { DrawerActionHeader, DrawerFooter } from '@/components/ui/drawer';
 import { SheetField } from '@/components/ui/sheet-field';
@@ -127,29 +126,11 @@ export function EditProfileView({
             className="shadow-float"
           />
 
-          <div className="mt-section flex max-w-[19rem] flex-wrap justify-center gap-base">
-            {AVATAR_COLORS.map((color) => {
-              const selected = color.key === avatarColor;
-              return (
-                <button
-                  key={color.key}
-                  type="button"
-                  aria-label={`Cor ${color.key}`}
-                  aria-pressed={selected}
-                  onClick={() => setAvatarColor(color.key)}
-                  className="flex size-11 items-center justify-center rounded-full transition-transform active:scale-90"
-                  style={{
-                    backgroundImage: `linear-gradient(150deg, ${color.from}, ${color.to})`,
-                    boxShadow: selected
-                      ? `0 0 0 2px var(--background), 0 0 0 4px ${color.from}`
-                      : 'inset 0 0 0 1px rgba(255,255,255,0.12)',
-                  }}
-                >
-                  {selected && <Check className="size-[1.125rem] text-white" strokeWidth={3} />}
-                </button>
-              );
-            })}
-          </div>
+          <ColorSwatchPicker
+            value={avatarColor}
+            onChange={setAvatarColor}
+            className="mt-section max-w-[19rem]"
+          />
         </div>
 
         {/* fields */}

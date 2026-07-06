@@ -46,6 +46,7 @@ export class ProfileSummaryGroupsService {
             id: membership.group.id,
             name: membership.group.name,
             description: membership.group.description,
+            avatarColor: membership.group.avatarColor,
             rating: membership.rating,
             role: membership.role,
             lastPlayedAt: lastMatch?.playedAt ?? null,

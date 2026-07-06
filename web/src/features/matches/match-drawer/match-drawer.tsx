@@ -1,24 +1,24 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import type { GroupMember, Match } from '@/types/api';
-import { Drawer, DrawerContent } from '@/components/ui/drawer';
+import { type CSSProperties, useMemo, useState } from 'react';
+import { ArrowUpDown } from 'lucide-react';
+import type { GroupMember, Match, MatchPlayerInput } from '@/types/api';
+import { Drawer, DrawerActionHeader, DrawerContent } from '@/components/ui/drawer';
 import { Meta } from '@/components/ui/text';
-import { Info } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { MatchPlayerInput } from '@/types/api';
 import { createGroupMatch, updateGroupMatch } from '@/features/matches/api/matches.api';
 import { getAccessToken } from '@/lib/auth';
-import { ComposeView } from './compose-view';
-import { PickerView, type PickerEntry } from './picker-view';
-import { TeamCard } from './team-card';
+import { TeamRow } from './team-row';
+import { ScoreColumn } from './score-column';
+import { type PickerEntry, PlayerPicker } from './player-picker';
 import {
   buildPlayerLookup,
   isDraftGuest,
   makeDraftGuest,
   resolveFromMember,
 } from './match-player.helpers';
-import { SLOT_SUBLABELS, useMatchForm, type SlotKey } from './use-match-form';
+import { SLOT_KEYS, type SlotKey, useMatchForm } from './use-match-form';
+
+const EASE = 'cubic-bezier(0.16,1,0.3,1)';
 
 export type MatchDrawerTarget =
   | { mode: 'create'; key: number }
@@ -101,16 +101,18 @@ function MatchComposer({
 }: MatchComposerProps) {
   const form = useMatchForm(match);
 
-  const [view, setView] = useState<'compose' | 'picker'>('compose');
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [activeSlot, setActiveSlot] = useState<SlotKey | null>(null);
+  const [search, setSearch] = useState('');
+  const [convOpen, setConvOpen] = useState(false);
+  const [convName, setConvName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Guests named inline this session: local-only drafts, merged into the roster so
-  // they're immediately pickable. They're persisted only when the match is saved.
+  // they're immediately pickable. Persisted only when the match is saved.
   const [draftGuests, setDraftGuests] = useState<GroupMember[]>([]);
 
   const roster = useMemo(() => [...members, ...draftGuests], [members, draftGuests]);
-
   const lookup = useMemo(() => buildPlayerLookup(roster, match), [roster, match]);
 
   const rankById = useMemo(() => {
@@ -129,43 +131,93 @@ function MatchComposer({
             id: member.id,
             firstName: resolved.firstName,
             fullName: resolved.fullName,
-            initial: resolved.initial,
-            avatarColor: resolved.avatarColor,
             userId: resolved.userId,
+            avatarColor: resolved.avatarColor,
             rank: rankById.get(member.id),
-            rating: member.rating,
             isYou: member.id === currentMembershipId,
           };
-        })
-        .sort((a, b) => b.rating - a.rating),
+        }),
     [roster, rankById, currentMembershipId],
   );
 
   function openPicker(slot: SlotKey) {
     setActiveSlot(slot);
-    setView('picker');
+    setPickerOpen(true);
+    setSearch('');
+    setConvOpen(false);
+    setConvName('');
   }
 
-  function handleSelect(memberId: string) {
-    if (activeSlot) {
-      form.assign(activeSlot, memberId);
+  function closePicker() {
+    setPickerOpen(false);
+    setConvOpen(false);
+    setConvName('');
+  }
+
+  // Fill `slot` with `id`, then focus the next empty slot; auto-close once the
+  // fourth player completes the lineup.
+  function fillAndAdvance(slot: SlotKey, id: string) {
+    const wasComplete = form.allChosen;
+    form.assign(slot, id);
+    const nextSlots = { ...form.slots, [slot]: id };
+    const next = form.firstEmpty(nextSlots);
+    setActiveSlot(next ?? slot);
+    setSearch('');
+    if (!wasComplete && !next) {
+      setPickerOpen(false);
+    }
+  }
+
+  function handleSelect(id: string) {
+    // Tapping a player already in the lineup removes them (toggle off).
+    const inSlot = SLOT_KEYS.find((key) => form.slots[key] === id);
+    if (inSlot) {
+      form.clear(inSlot);
+      setActiveSlot(inSlot);
+      setSearch('');
+      return;
     }
 
-    setActiveSlot(null);
-    setView('compose');
+    const slot = activeSlot ?? form.firstEmpty();
+    if (!slot) {
+      return;
+    }
+    fillAndAdvance(slot, id);
   }
 
-  function handleCreatePlayer(name: string) {
+  function handleToggleConv() {
+    if (convOpen) {
+      setConvOpen(false);
+      setConvName('');
+      return;
+    }
+
+    const query = search.trim();
+    const exact = pool.some((entry) => entry.fullName.toLowerCase() === query.toLowerCase());
+    setConvOpen(true);
+    setConvName(query && !exact ? query : '');
+  }
+
+  function handleConfirmConv() {
+    const name = convName.trim();
+    if (!name) {
+      return;
+    }
+
     const draft = makeDraftGuest(groupId, name);
-
     setDraftGuests((prev) => [...prev, draft]);
+    setConvOpen(false);
+    setConvName('');
 
-    if (activeSlot) {
-      form.assign(activeSlot, draft.id);
+    const slot = activeSlot ?? form.firstEmpty();
+    if (slot) {
+      fillAndAdvance(slot, draft.id);
     }
+  }
 
-    setActiveSlot(null);
-    setView('compose');
+  function slotNumberById(id: string) {
+    const index = SLOT_KEYS.findIndex((key) => form.slots[key] === id);
+    return index === -1 ? null : index + 1;
   }
 
   async function handleSave() {
@@ -174,7 +226,6 @@ function MatchComposer({
     }
 
     const token = getAccessToken();
-
     if (!token) {
       setError('Entre na sua conta para registrar uma partida.');
       return;
@@ -189,13 +240,14 @@ function MatchComposer({
       return isDraftGuest(id) ? { name: draftNameById.get(id) ?? '' } : { memberId: id };
     };
 
+    // Top row is the winner: it maps to teamA with the higher score.
     const input = {
       teamAPlayer1: toPlayer('a1'),
       teamAPlayer2: toPlayer('a2'),
       teamBPlayer1: toPlayer('b1'),
       teamBPlayer2: toPlayer('b2'),
-      gamesA: form.scoreA,
-      gamesB: form.scoreB,
+      gamesA: form.win as number,
+      gamesB: form.lose as number,
     };
 
     setIsSubmitting(true);
@@ -216,89 +268,137 @@ function MatchComposer({
     }
   }
 
-  if (view === 'picker' && activeSlot) {
-    const currentId = form.slots[activeSlot];
-
-    return (
-      <PickerView
-        sublabel={SLOT_SUBLABELS[activeSlot]}
-        pool={pool}
-        currentId={currentId}
-        takenIds={form.selectedIds.filter((id) => id !== currentId)}
-        onSelect={handleSelect}
-        onCreate={handleCreatePlayer}
-        onBack={() => setView('compose')}
-      />
-    );
-  }
+  const teamsGrow: CSSProperties = {
+    display: 'flex',
+    flexGrow: pickerOpen ? 40 : 60,
+    flexShrink: 1,
+    flexBasis: 0,
+    minWidth: 0,
+    transition: `flex-grow 0.46s ${EASE}`,
+  };
+  const scoreGrow: CSSProperties = {
+    flexGrow: pickerOpen ? 60 : 40,
+    flexShrink: 1,
+    flexBasis: 0,
+    minWidth: 0,
+    transition: `flex-grow 0.46s ${EASE}`,
+  };
 
   return (
-    <ComposeView
-      title={mode === 'edit' ? 'Corrigir partida' : 'Nova partida'}
-      groupName={groupName}
-      saveLabel={mode === 'edit' ? 'Salvar correção' : 'Salvar partida'}
-      canSave={form.canSave}
-      isSubmitting={isSubmitting}
-      error={error}
-      onCancel={onClose}
-      onSave={handleSave}
-    >
-      <TeamCard
-        label="Dupla A"
-        slotKeys={['a1', 'a2']}
-        slots={form.slots}
-        score={form.scoreA}
-        isWinner={form.winner === 'A'}
-        hasWinner={form.validScore}
-        resolve={(id) => lookup.get(id)}
-        rankOf={(id) => rankById.get(id)}
-        onAddSlot={openPicker}
-        onRemoveSlot={form.clear}
-        onStep={form.stepA}
-        minGames={form.minGames}
-        maxGames={form.maxGames}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <DrawerActionHeader
+        left={{ kind: 'cancel', onClick: onClose, disabled: isSubmitting }}
+        title={mode === 'edit' ? 'Corrigir partida' : 'Nova partida'}
+        subtitle={`${groupName} · Duplas`}
+        right={{
+          kind: 'save',
+          label: mode === 'edit' ? 'Salvar' : 'Registrar',
+          busyLabel: 'Salvando…',
+          onClick: handleSave,
+          disabled: !form.canSave,
+          busy: isSubmitting,
+        }}
       />
 
-      <div className="my-3.5 flex items-center gap-3 px-0.5">
-        <div className="h-px flex-1 bg-divider" />
-        <Meta className="font-extrabold tracking-[0.15em] text-faint-foreground">VS</Meta>
-        <div className="h-px flex-1 bg-divider" />
-      </div>
-
-      <TeamCard
-        label="Dupla B"
-        slotKeys={['b1', 'b2']}
-        slots={form.slots}
-        score={form.scoreB}
-        isWinner={form.winner === 'B'}
-        hasWinner={form.validScore}
-        resolve={(id) => lookup.get(id)}
-        rankOf={(id) => rankById.get(id)}
-        onAddSlot={openPicker}
-        onRemoveSlot={form.clear}
-        onStep={form.stepB}
-        minGames={form.minGames}
-        maxGames={form.maxGames}
-      />
-
-      <div className="mt-4 flex items-start gap-1.5 px-1">
-        <Info
-          className={cn(
-            'mt-px size-[15px] shrink-0',
-            form.helperWarn ? 'text-tag-warn' : 'text-faint-foreground',
-          )}
-          strokeWidth={2.2}
-          aria-hidden
-        />
-        <Meta
-          className={cn(
-            'leading-[1.45] font-semibold',
-            form.helperWarn ? 'text-tag-warn' : 'text-faint-foreground',
-          )}
-        >
-          {form.helperText}
+      {error && (
+        <Meta className="shrink-0 px-4 pb-1 text-center text-danger" role="alert">
+          {error}
         </Meta>
+      )}
+
+      <div className="relative flex min-h-0 flex-1 flex-col px-3.5 pt-1.5 pb-[18px]">
+        {/* Winning team + its score */}
+        <div className="flex min-h-0 flex-1 gap-[11px]">
+          <div style={teamsGrow}>
+            <TeamRow
+              slotKeys={form.topKeys}
+              slots={form.slots}
+              resolve={(id) => lookup.get(id)}
+              activeSlot={activeSlot}
+              pickerOpen={pickerOpen}
+              onTapSlot={openPicker}
+            />
+          </div>
+          <div style={scoreGrow}>
+            <ScoreColumn
+              variant="win"
+              win={form.win}
+              lose={form.lose}
+              winOpen={form.winOpen}
+              loseOpen={form.loseOpen}
+              onTapWin={form.tapWin}
+              onTapLose={form.tapLose}
+            />
+          </div>
+        </div>
+
+        {/* Divider with the winner-swap control on the team side */}
+        <div className="my-[9px] flex shrink-0 items-center">
+          <div style={teamsGrow} className="flex items-center gap-2">
+            <div className="h-px flex-1 bg-border-accent" />
+            <button
+              type="button"
+              onClick={form.swapSides}
+              aria-label="Trocar vencedor"
+              className="flex size-[30px] shrink-0 items-center justify-center rounded-full bg-surface text-muted-foreground shadow-[inset_0_0_0_1px_var(--border)] transition-transform active:scale-[0.94]"
+            >
+              <ArrowUpDown className="size-[13px]" strokeWidth={2.4} aria-hidden />
+            </button>
+            <div className="h-px flex-1 bg-border-accent" />
+          </div>
+          <div style={scoreGrow} className="flex items-center">
+            <div className="h-px flex-1 bg-border-accent" />
+          </div>
+        </div>
+
+        {/* Losing team + its score */}
+        <div className="flex min-h-0 flex-1 gap-[11px]">
+          <div style={teamsGrow}>
+            <TeamRow
+              slotKeys={form.bottomKeys}
+              slots={form.slots}
+              resolve={(id) => lookup.get(id)}
+              activeSlot={activeSlot}
+              pickerOpen={pickerOpen}
+              onTapSlot={openPicker}
+            />
+          </div>
+          <div style={scoreGrow}>
+            <ScoreColumn
+              variant="lose"
+              win={form.win}
+              lose={form.lose}
+              winOpen={form.winOpen}
+              loseOpen={form.loseOpen}
+              onTapWin={form.tapWin}
+              onTapLose={form.tapLose}
+            />
+          </div>
+        </div>
+
+        {pickerOpen && (
+          <button
+            type="button"
+            aria-label="Fechar seletor"
+            onClick={closePicker}
+            className="absolute inset-0 z-[19] cursor-default"
+          />
+        )}
+
+        <PlayerPicker
+          open={pickerOpen}
+          pool={pool}
+          slotNumberById={slotNumberById}
+          search={search}
+          onSearchChange={setSearch}
+          convOpen={convOpen}
+          convName={convName}
+          onToggleConv={handleToggleConv}
+          onConvNameChange={setConvName}
+          onConfirmConv={handleConfirmConv}
+          onSelect={handleSelect}
+        />
       </div>
-    </ComposeView>
+    </div>
   );
 }

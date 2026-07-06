@@ -20,8 +20,8 @@ built in) and `components/ui/drawer.tsx` (`DrawerActionHeader` — one header ac
   create-group's description.)
 - **Inconsistent error UX (5 styles).** Form-level `text-destructive` `<p>` (login, register,
   create-group, `invite-accept-client`) vs centered `text-danger` `<Meta>`
-  (edit-profile, password, compose) vs `text-tag-warn` `<Meta>` (`claim-offer-client`,
-  `picker-view`) vs the field-level treatment now in `SheetField`.
+  (edit-profile, password, `match-drawer`) vs `text-tag-warn` `<Meta>` (`claim-offer-client`)
+  vs the field-level treatment now in `SheetField`.
   Standardize: field-level where the error maps to a field; one danger form-level fallback
   otherwise. `text-tag-warn` is for warnings, not errors.
 - **Missing loading / error / empty states.** `features/members/member-profile-drawer.tsx` and

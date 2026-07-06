@@ -4,63 +4,127 @@ import type { Match } from '@/types/api';
 export type SlotKey = 'a1' | 'a2' | 'b1' | 'b2';
 export type Slots = Record<SlotKey, string | null>;
 
+// Top row (a1/a2) is always the winning team; bottom row (b1/b2) the loser.
+// A swap flips the two rows. On submit, top → teamA, bottom → teamB, so
+// `gamesA (win) > gamesB (lose)` always and the backend derives TEAM_A as winner.
 export const SLOT_KEYS: SlotKey[] = ['a1', 'a2', 'b1', 'b2'];
 
-export const SLOT_SUBLABELS: Record<SlotKey, string> = {
-  a1: 'Dupla A · 1º jogador',
-  a2: 'Dupla A · 2º jogador',
-  b1: 'Dupla B · 1º jogador',
-  b2: 'Dupla B · 2º jogador',
-};
+const TOP_KEYS: [SlotKey, SlotKey] = ['a1', 'a2'];
+const BOTTOM_KEYS: [SlotKey, SlotKey] = ['b1', 'b2'];
 
-const MIN_GAMES = 0;
-const MAX_GAMES = 7;
+// Beach-tennis single set, no draws: the winner closes at 6 (loser ≤4), 7–5, or
+// 7–6 (6–6 tie-break). The winner therefore only ever picks 7 or 6.
+export type WinValue = 6 | 7;
+export type LoseValue = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-function initSlots(match?: Match): Slots {
+export const WIN_VALUES: WinValue[] = [7, 6];
+export const LOSE_VALUES: LoseValue[] = [0, 1, 2, 3, 4, 5, 6];
+
+// Which loser scores are legal for a given winning score.
+export function loseOptionsFor(win: WinValue | null): LoseValue[] {
+  if (win === 7) return [5, 6];
+  if (win === 6) return [0, 1, 2, 3, 4];
+  return LOSE_VALUES;
+}
+
+function emptySlots(): Slots {
+  return { a1: null, a2: null, b1: null, b2: null };
+}
+
+// Seed slots + score from an existing match (edit): the previously-winning team
+// goes on top and both selectors start collapsed to their chosen figure.
+function initFromMatch(match: Match) {
   const memberAt = (team: 'TEAM_A' | 'TEAM_B', position: number) =>
-    match?.players.find((player) => player.team === team && player.position === position)
+    match.players.find((player) => player.team === team && player.position === position)
       ?.groupMemberId ?? null;
 
-  return {
-    a1: memberAt('TEAM_A', 1),
-    a2: memberAt('TEAM_A', 2),
-    b1: memberAt('TEAM_B', 1),
-    b2: memberAt('TEAM_B', 2),
+  const winningTeam = match.gamesA >= match.gamesB ? 'TEAM_A' : 'TEAM_B';
+  const losingTeam = winningTeam === 'TEAM_A' ? 'TEAM_B' : 'TEAM_A';
+
+  const slots: Slots = {
+    a1: memberAt(winningTeam, 1),
+    a2: memberAt(winningTeam, 2),
+    b1: memberAt(losingTeam, 1),
+    b2: memberAt(losingTeam, 2),
   };
+
+  const win = Math.max(match.gamesA, match.gamesB) as WinValue;
+  const lose = Math.min(match.gamesA, match.gamesB) as LoseValue;
+
+  return { slots, win, lose };
 }
-
-function clampGames(value: number) {
-  return Math.min(MAX_GAMES, Math.max(MIN_GAMES, value));
-}
-
-// Beach-tennis single set: the winner closes at 6 (loser ≤4), 7–5, or 7–6
-// (6–6 tie-break). Mirrors the approved prototype's rules.
-function isValidScore(a: number, b: number) {
-  if (a === b) {
-    return false;
-  }
-
-  const hi = Math.max(a, b);
-  const lo = Math.min(a, b);
-
-  return (hi === 6 && lo <= 4) || (hi === 7 && (lo === 5 || lo === 6));
-}
-
-const DEFAULT_HELPER =
-  '1 set até 6 games. Em 5–5 vai até 7; 6–6 é tie-break, registrado como 7–6.';
 
 export function useMatchForm(match?: Match) {
-  const [slots, setSlots] = useState<Slots>(() => initSlots(match));
-  const [scoreA, setScoreA] = useState(() => (match ? match.gamesA : 0));
-  const [scoreB, setScoreB] = useState(() => (match ? match.gamesB : 0));
+  const seed = useMemo(() => (match ? initFromMatch(match) : null), [match]);
+
+  const [slots, setSlots] = useState<Slots>(() => seed?.slots ?? emptySlots());
+  const [win, setWin] = useState<WinValue | null>(() => seed?.win ?? null);
+  const [lose, setLose] = useState<LoseValue | null>(() => seed?.lose ?? null);
+  // A selector is "open" (expanded to all options) until a value is chosen; it
+  // collapses to the picked figure and re-opens when that figure is tapped again.
+  const [winOpen, setWinOpen] = useState(() => seed == null);
+  const [loseOpen, setLoseOpen] = useState(() => seed == null);
 
   const assign = (slot: SlotKey, memberId: string) =>
     setSlots((current) => ({ ...current, [slot]: memberId }));
 
   const clear = (slot: SlotKey) => setSlots((current) => ({ ...current, [slot]: null }));
 
-  const stepA = (delta: number) => setScoreA((value) => clampGames(value + delta));
-  const stepB = (delta: number) => setScoreB((value) => clampGames(value + delta));
+  const firstEmpty = (source: Slots = slots): SlotKey | null =>
+    SLOT_KEYS.find((key) => source[key] == null) ?? null;
+
+  const swapSides = () =>
+    setSlots((current) => ({
+      a1: current.b1,
+      a2: current.b2,
+      b1: current.a1,
+      b2: current.a2,
+    }));
+
+  const chooseWin = (value: WinValue) => {
+    let nextLose = lose;
+    let reopenLose = false;
+
+    // Keep the loser only if it stays legal under the new winning score.
+    if (!loseOptionsFor(value).includes(lose as LoseValue)) {
+      nextLose = null;
+      reopenLose = true;
+    }
+
+    setWin(value);
+    setLose(nextLose);
+    setWinOpen(false);
+    if (reopenLose) setLoseOpen(true);
+  };
+
+  const chooseLose = (value: LoseValue) => {
+    // Picking a loser score implies the winner: 5–6 → 7, 0–4 → 6.
+    setLose(value);
+    setWin(value >= 5 ? 7 : 6);
+    setWinOpen(false);
+    setLoseOpen(false);
+  };
+
+  const tapWin = (value: WinValue) => {
+    // Tapping the already-collapsed winner re-opens both selectors from scratch.
+    if (win === value && !winOpen) {
+      setWin(null);
+      setLose(null);
+      setWinOpen(true);
+      setLoseOpen(true);
+      return;
+    }
+    chooseWin(value);
+  };
+
+  const tapLose = (value: LoseValue) => {
+    if (lose === value && !loseOpen) {
+      setLose(null);
+      setLoseOpen(true);
+      return;
+    }
+    chooseLose(value);
+  };
 
   const selectedIds = useMemo(
     () => SLOT_KEYS.map((key) => slots[key]).filter((id): id is string => Boolean(id)),
@@ -69,49 +133,25 @@ export function useMatchForm(match?: Match) {
 
   const allChosen = selectedIds.length === 4 && new Set(selectedIds).size === 4;
 
-  const validScore = useMemo(() => isValidScore(scoreA, scoreB), [scoreA, scoreB]);
-
-  // A team is the winner only with a valid winning scoreline — used for the
-  // "Venceu" badge, the card tint and the score colour.
-  const winner: 'A' | 'B' | null = !validScore ? null : scoreA > scoreB ? 'A' : 'B';
-
-  const canSave = allChosen && validScore;
-
-  const { helperText, helperWarn } = useMemo(() => {
-    if (scoreA === 6 && scoreB === 6) {
-      return {
-        helperText: 'Tie-break em 6–6 — leve o vencedor a 7 (fica 7–6).',
-        helperWarn: true,
-      };
-    }
-
-    if ((scoreA > 0 || scoreB > 0) && !isValidScore(scoreA, scoreB)) {
-      return {
-        helperText: 'Placar incompleto: o vencedor fecha em 6, 7–5 ou 7–6.',
-        helperWarn: true,
-      };
-    }
-
-    return { helperText: DEFAULT_HELPER, helperWarn: false };
-  }, [scoreA, scoreB]);
+  const canSave = allChosen && win !== null && lose !== null;
 
   return {
     slots,
-    scoreA,
-    scoreB,
     assign,
     clear,
-    stepA,
-    stepB,
+    firstEmpty,
+    swapSides,
+    topKeys: TOP_KEYS,
+    bottomKeys: BOTTOM_KEYS,
     selectedIds,
     allChosen,
-    validScore,
-    winner,
+    win,
+    lose,
+    winOpen,
+    loseOpen,
+    tapWin,
+    tapLose,
     canSave,
-    helperText,
-    helperWarn,
-    minGames: MIN_GAMES,
-    maxGames: MAX_GAMES,
   };
 }
 

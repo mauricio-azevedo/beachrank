@@ -54,14 +54,15 @@ Indexes: `@@index([email])`. Relations: createdGroups, memberships, createdInvit
 
 ### Group
 
-| Column                   | Type              | Notes                   |
-| ------------------------ | ----------------- | ----------------------- |
-| `id`                     | uuid PK           |                         |
-| `name`                   | String            |                         |
-| `description`            | String?           |                         |
-| `visibility`             | `GroupVisibility` | default `PUBLIC`        |
-| `createdById`            | FK→User           | relation `GroupCreator` |
-| `createdAt`, `updatedAt` | DateTime          |                         |
+| Column                   | Type              | Notes                                            |
+| ------------------------ | ----------------- | ------------------------------------------------ |
+| `id`                     | uuid PK           |                                                  |
+| `name`                   | String            |                                                  |
+| `description`            | String?           |                                                  |
+| `visibility`             | `GroupVisibility` | default `PUBLIC`                                 |
+| `avatarColor`            | String            | palette key, default `blue` (chosen at creation) |
+| `createdById`            | FK→User           | relation `GroupCreator`                          |
+| `createdAt`, `updatedAt` | DateTime          |                                                  |
 
 Indexes: `[visibility, createdAt]`, `[name]`, `[createdById]`.
 Children cascade on group delete (members, matches, invites, feed items, jobs, all derived models).

@@ -42,6 +42,7 @@ export type GroupHomeCard = {
     name: string;
     description: string | null;
     visibility: 'PUBLIC';
+    avatarColor: string;
     membersCount: number;
     matchesCount: number;
     lastMatchAt: string | null;

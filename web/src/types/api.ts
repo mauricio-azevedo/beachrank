@@ -14,6 +14,7 @@ export type Group = {
   name: string;
   description: string | null;
   visibility: 'PUBLIC';
+  avatarColor: string;
   createdById: string;
   createdAt: string;
   updatedAt: string;

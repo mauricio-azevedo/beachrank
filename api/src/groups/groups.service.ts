@@ -1,5 +1,9 @@
 import { MEMBER_USER_SELECT } from '../common/member-display-name';
 import {
+  isAvatarColorKey,
+  pickDefaultAvatarColor,
+} from '../common/avatar-color';
+import {
   BadRequestException,
   Injectable,
   NotFoundException,
@@ -20,6 +24,7 @@ export class GroupsService {
   async create(body: {
     name: string;
     description?: string;
+    avatarColor?: string;
     createdById: string;
   }) {
     const name = body.name?.trim();
@@ -31,6 +36,10 @@ export class GroupsService {
     if (!body.createdById) {
       throw new BadRequestException('Group creator is required');
     }
+
+    // A chosen colour must be a known palette key; an omitted one falls back to a
+    // deterministic varied default (seeded by the name) so groups aren't all blue.
+    const avatarColor = this.resolveAvatarColor(body.avatarColor, name);
 
     const creator = await this.prisma.user.findUnique({
       where: { id: body.createdById },
@@ -45,6 +54,7 @@ export class GroupsService {
         data: {
           name,
           description: body.description?.trim() || null,
+          avatarColor,
           createdById: body.createdById,
         },
       });
@@ -89,6 +99,19 @@ export class GroupsService {
         },
       });
     });
+  }
+
+  private resolveAvatarColor(value: string | undefined, seed: string): string {
+    if (value === undefined) {
+      return pickDefaultAvatarColor(seed);
+    }
+
+    const normalized = value.trim();
+    if (!isAvatarColorKey(normalized)) {
+      throw new BadRequestException('Invalid avatar color');
+    }
+
+    return normalized;
   }
 
   findAll() {

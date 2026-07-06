@@ -161,9 +161,9 @@ function GroupIdentityHeader({
       <GroupAvatar
         name={group.name}
         groupId={group.id}
+        avatarColor={group.avatarColor}
         size="hero"
-        tone="accent"
-        className="shadow-[0_8px_20px_rgba(31,73,135,0.45),inset_0_0_0_1px_var(--border-accent)]"
+        className="shadow-[0_8px_20px_rgba(0,0,0,0.4),inset_0_0_0_1px_var(--border-accent)]"
       />
 
       <Title className="mt-base">{group.name}</Title>

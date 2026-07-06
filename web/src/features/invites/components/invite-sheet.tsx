@@ -17,6 +17,8 @@ import type { GroupInvite } from '@/types/api';
 type InviteSheetContentProps = {
   groupId: string;
   groupName: string;
+  // The group's stored avatar colour for the group monogram (open-invite branch).
+  groupAvatarColor?: string | null;
   // null → the group's open invite; a guest → a closed invite addressed to them.
   guest: { id: string; name: string } | null;
 };
@@ -29,7 +31,12 @@ type SheetStatus =
 // One sheet for both invite kinds: QR + copiable link, differing only in identity and
 // explainer. It creates (or reuses, server-side) the invite as soon as it opens — no
 // "generate" step. Admin-only entry points; the backend enforces it anyway.
-export function InviteSheetContent({ groupId, groupName, guest }: InviteSheetContentProps) {
+export function InviteSheetContent({
+  groupId,
+  groupName,
+  groupAvatarColor,
+  guest,
+}: InviteSheetContentProps) {
   const [status, setStatus] = useState<SheetStatus>({ state: 'loading' });
   const [attempt, setAttempt] = useState(0);
   const { copied, failed, copy } = useCopyToClipboard();
@@ -75,7 +82,12 @@ export function InviteSheetContent({ groupId, groupName, guest }: InviteSheetCon
         {guest ? (
           <MemberAvatar userId={null} name={guest.name} avatarColor={null} size="md" />
         ) : (
-          <GroupAvatar name={groupName} groupId={groupId} size="md" tone="accent" />
+          <GroupAvatar
+            name={groupName}
+            groupId={groupId}
+            avatarColor={groupAvatarColor}
+            size="md"
+          />
         )}
         <div className="min-w-0 flex-1 text-left">
           <Overline size="xs">Convidar</Overline>

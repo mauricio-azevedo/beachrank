@@ -21,6 +21,7 @@ export class GroupsController {
     body: {
       name: string;
       description?: string;
+      avatarColor?: string;
     },
   ) {
     return this.groupsService.create({

@@ -1,4 +1,7 @@
+import { Users } from 'lucide-react';
+import { avatarColorGradient } from '@/lib/avatar-color';
 import { getGroupInitials, groupHueGradient } from '@/lib/group-identity';
+import { AvatarShell } from '@/components/ui/avatar-shell';
 import { cn } from '@/lib/utils';
 
 export type GroupAvatarSize = 'sm' | 'md' | 'lg' | 'hero';
@@ -18,7 +21,8 @@ const TONE_CLASS: Record<GroupAvatarTone, string> = {
 };
 
 type GroupAvatarProps = {
-  // Full group name; the initials are derived here.
+  // Full group name; the initials are derived here. Empty → a Users icon fallback,
+  // so an unnamed group (e.g. the create sheet before typing) is never a blank circle.
   name: string;
   // Seeds the hue tone so the group wears the same color everywhere; falls back to
   // the name when a caller has no id (the color stays stable either way).
@@ -27,26 +31,38 @@ type GroupAvatarProps = {
   // hue (default) = the group's own tint (lists, rails, feed). accent = the current
   // group (screen hero, invite sheet). brand = invite chrome (chips, landing).
   tone?: GroupAvatarTone;
+  // Stored palette key (Group.avatarColor). When set, the hue tone uses this chosen
+  // colour instead of the id/name-derived hue; unknown/absent falls back to the hue.
+  avatarColor?: string | null;
   // Layout/emphasis only (margins, hero glow) — never sizing or fill.
   className?: string;
 };
 
-// The single group monogram, mirror of MemberAvatar: always round, `size` picks the
-// scale, `tone` picks the fill. The group name is always adjacent text, so the
-// monogram itself is decorative.
-export function GroupAvatar({ name, groupId, size, tone = 'hue', className }: GroupAvatarProps) {
+// The single group monogram, built on the same AvatarShell as MemberAvatar: always
+// round, `size` picks the scale, `tone` picks the fill. The group name is always
+// adjacent text, so the monogram itself is decorative.
+export function GroupAvatar({
+  name,
+  groupId,
+  size,
+  tone = 'hue',
+  avatarColor,
+  className,
+}: GroupAvatarProps) {
+  const hueFill = avatarColorGradient(avatarColor) ?? groupHueGradient(groupId ?? name);
+  const initials = getGroupInitials(name);
+
   return (
-    <div
-      aria-hidden
+    <AvatarShell
+      gradient={tone === 'hue' ? hueFill : undefined}
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-full shadow-[inset_0_0_0_1px_var(--border-accent)]',
+        'shadow-[inset_0_0_0_1px_var(--border-accent)]',
         SIZE_CLASS[size],
         TONE_CLASS[tone],
         className,
       )}
-      style={tone === 'hue' ? { background: groupHueGradient(groupId ?? name) } : undefined}
     >
-      {getGroupInitials(name)}
-    </div>
+      {initials || <Users className="size-1/2" strokeWidth={1.8} />}
+    </AvatarShell>
   );
 }

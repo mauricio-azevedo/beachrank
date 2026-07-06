@@ -195,6 +195,7 @@ export function GroupDetail({ groupId, tab, autoOpenCompose = false }: Props) {
           onOpenChange={setMembersOpen}
           groupId={data.group.id}
           groupName={data.group.name}
+          groupAvatarColor={data.group.avatarColor}
           viewerRole={data.membership?.role ?? null}
           members={data.members}
           ranking={data.ranking}

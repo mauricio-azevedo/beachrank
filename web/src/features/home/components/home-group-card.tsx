@@ -45,7 +45,12 @@ export function HomeGroupCard({ card }: { card: GroupHomeCard }) {
     >
       <Card size="sm">
         <CardContent className="flex items-center gap-comfortable">
-          <GroupAvatar name={card.group.name} groupId={card.group.id} size="lg" />
+          <GroupAvatar
+            name={card.group.name}
+            groupId={card.group.id}
+            avatarColor={card.group.avatarColor}
+            size="lg"
+          />
 
           <div className="min-w-0 flex-1">
             <Label className="block truncate">{card.group.name}</Label>

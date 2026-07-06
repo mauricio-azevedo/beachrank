@@ -131,6 +131,9 @@ model Group {
   name        String
   description String?
   visibility  GroupVisibility @default(PUBLIC)
+  // Palette key for the group's avatar gradient (frontend owns key→gradient). Chosen
+  // when the group is created; the default is a NOT-NULL safety net.
+  avatarColor String          @default("blue")
 
   createdById String
   createdBy   User   @relation("GroupCreator", fields: [createdById], references: [id])

@@ -40,6 +40,7 @@ export function createGroup(
   input: {
     name: string;
     description?: string;
+    avatarColor?: string;
   },
 ): Promise<Group> {
   return apiRequest<Group>('/groups', {
